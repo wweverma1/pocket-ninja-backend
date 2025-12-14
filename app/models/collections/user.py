@@ -26,13 +26,11 @@ class User:
         """
         collection = User.get_collection()
 
+        # FIX APPLIED PREVIOUSLY: Use explicit 'is None' check
         if collection is None: 
             return None
         
         user_data = {
-            "lineAccountId": line_account_id,
-            "googleAccountId": google_account_id,
-            "yahooAccountId": yahoo_account_id,
             "username": username,
             "totalContributions": 0,
             "rankScore": 0,
@@ -42,21 +40,34 @@ class User:
             "joinedAt": datetime.now(timezone.utc)
         }
         
+        # FIX APPLIED: Conditionally add social IDs only if they are NOT None.
+        # This ensures the field is MISSING from the document if not provided.
+        if line_account_id is not None:
+            user_data["lineAccountId"] = line_account_id
+        if google_account_id is not None:
+            user_data["googleAccountId"] = google_account_id
+        if yahoo_account_id is not None:
+            user_data["yahooAccountId"] = yahoo_account_id
+        
         try:
             # Enforce uniqueness on username
             collection.create_index([("username", 1)], unique=True)
 
+            # FIX APPLIED: Use the simple $exists: true filter.
+            # This is safe now because we omit the field if the value is None.
+            
             # Enforce uniqueness on external social IDs (only if present)
-            if line_account_id:
-                collection.create_index([("lineAccountId", 1)], unique=True, partialFilterExpression={"lineAccountId": {"$ne": None}})
-            if google_account_id:
-                collection.create_index([("googleAccountId", 1)], unique=True, partialFilterExpression={"googleAccountId": {"$ne": None}})
-            if yahoo_account_id:
-                collection.create_index([("yahooAccountId", 1)], unique=True, partialFilterExpression={"yahooAccountId": {"$ne": None}})
+            if "lineAccountId" in user_data:
+                collection.create_index([("lineAccountId", 1)], unique=True, partialFilterExpression={"lineAccountId": {"$exists": True}})
+            if "googleAccountId" in user_data:
+                collection.create_index([("googleAccountId", 1)], unique=True, partialFilterExpression={"googleAccountId": {"$exists": True}})
+            if "yahooAccountId" in user_data:
+                collection.create_index([("yahooAccountId", 1)], unique=True, partialFilterExpression={"yahooAccountId": {"$exists": True}})
                 
             result = collection.insert_one(user_data)
             return result.inserted_id
         except Exception as e:
+            # Handle potential duplicate key error (username or social ID conflict)
             print(f"Error creating user: {e}")
             return None
 
@@ -66,7 +77,6 @@ class User:
         Retrieves a user's MongoDB ObjectId (_id) by their social media ID and provider.
         """
         collection = User.get_collection()
-
         if collection is None:
             return None
             
@@ -90,7 +100,6 @@ class User:
         Retrieves a user document by its MongoDB ObjectId.
         """
         collection = User.get_collection()
-
         if collection is None or not ObjectId.is_valid(user_id):
             return None
         
@@ -102,7 +111,6 @@ class User:
         Updates the user's estimatedTotalSavings using the MongoDB ObjectId.
         """
         collection = User.get_collection()
-
         if collection is None or not ObjectId.is_valid(user_id):
             return False
         
