@@ -7,8 +7,10 @@ app = Flask(__name__)
 CORS(app)
 
 from app.home.routes import home_endpoints
+from app.product.routes import product_endpoints
 
 app.register_blueprint(home_endpoints)
+app.register_blueprint(product_endpoints)
 
 from app.utils.app_functions import (
     before_request,
