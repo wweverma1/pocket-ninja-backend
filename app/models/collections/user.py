@@ -1,4 +1,4 @@
-from app.database.db import db # Use the corrected import path
+from app.database.db import db 
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
 
@@ -11,14 +11,13 @@ class User:
     totalContributions, rankScore, hostRating (totalPoints, totalRatings), 
     totalExpenditure, estimatedTotalSavings, joinedAt.
     """
-    # REMOVED: collection = db['users'] if db else None
     
     @staticmethod
     def get_collection():
         """Helper to get the MongoDB collection or None if DB is not ready."""
         if db is None:
             return None
-        return db['users'] # Access collection dynamically
+        return db['users']
 
     @staticmethod
     def create_user(username: str, line_account_id: str = None, google_account_id: str = None, yahoo_account_id: str = None):
@@ -26,10 +25,10 @@ class User:
         Creates a new user document.
         """
         collection = User.get_collection()
-        if not collection:
+
+        if collection is None: 
             return None
         
-        # ... (user_data construction remains the same)
         user_data = {
             "lineAccountId": line_account_id,
             "googleAccountId": google_account_id,
@@ -40,7 +39,7 @@ class User:
             "hostRating": {"totalPoints": 0, "totalRatings": 0},
             "totalExpenditure": 0.0,
             "estimatedTotalSavings": 0.0,
-            "joinedAt": datetime.now(timezone.utc) # Use utcnow() for timezone-naive UTC storage
+            "joinedAt": datetime.now(timezone.utc)
         }
         
         try:
@@ -67,7 +66,8 @@ class User:
         Retrieves a user's MongoDB ObjectId (_id) by their social media ID and provider.
         """
         collection = User.get_collection()
-        if not collection:
+
+        if collection is None:
             return None
             
         field_map = {
@@ -90,7 +90,8 @@ class User:
         Retrieves a user document by its MongoDB ObjectId.
         """
         collection = User.get_collection()
-        if not collection or not ObjectId.is_valid(user_id):
+
+        if collection is None or not ObjectId.is_valid(user_id):
             return None
         
         return collection.find_one({"_id": ObjectId(user_id)})
@@ -101,7 +102,8 @@ class User:
         Updates the user's estimatedTotalSavings using the MongoDB ObjectId.
         """
         collection = User.get_collection()
-        if not collection or not ObjectId.is_valid(user_id):
+
+        if collection is None or not ObjectId.is_valid(user_id):
             return False
         
         result = collection.update_one(
