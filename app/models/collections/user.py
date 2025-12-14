@@ -48,11 +48,11 @@ class User:
 
             # Enforce uniqueness on external social IDs (only if present)
             if line_account_id:
-                collection.create_index([("lineAccountId", 1)], unique=True, partialFilterExpression={"lineAccountId": {"$exists": True, "$ne": None}})
+                collection.create_index([("lineAccountId", 1)], unique=True, partialFilterExpression={"lineAccountId": {"$ne": None}})
             if google_account_id:
-                collection.create_index([("googleAccountId", 1)], unique=True, partialFilterExpression={"googleAccountId": {"$exists": True, "$ne": None}})
+                collection.create_index([("googleAccountId", 1)], unique=True, partialFilterExpression={"googleAccountId": {"$ne": None}})
             if yahoo_account_id:
-                collection.create_index([("yahooAccountId", 1)], unique=True, partialFilterExpression={"yahooAccountId": {"$exists": True, "$ne": None}})
+                collection.create_index([("yahooAccountId", 1)], unique=True, partialFilterExpression={"yahooAccountId": {"$ne": None}})
                 
             result = collection.insert_one(user_data)
             return result.inserted_id
