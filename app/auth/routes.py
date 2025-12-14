@@ -1,0 +1,22 @@
+from flask import Blueprint
+
+from app.auth.controller import (
+    google_redirect,
+    line_redirect,
+    yahoo_redirect,
+    google_callback,
+    line_callback,
+    yahoo_callback
+)
+
+auth_endpoints = Blueprint('auth', __name__, url_prefix="/auth")
+
+# --- Phase 1: Initiation Endpoints (Frontend calls this to start login) ---
+auth_endpoints.add_url_rule(rule='/redirect/google', view_func=google_redirect, methods=['GET'])
+auth_endpoints.add_url_rule(rule='/redirect/line', view_func=line_redirect, methods=['GET'])
+auth_endpoints.add_url_rule(rule='/redirect/yahoo', view_func=yahoo_redirect, methods=['GET'])
+
+# --- Phase 2: Callback Endpoints (Social Provider redirects here with code) ---
+auth_endpoints.add_url_rule(rule='/callback/google', view_func=google_callback, methods=['GET'])
+auth_endpoints.add_url_rule(rule='/callback/line', view_func=line_callback, methods=['GET'])
+auth_endpoints.add_url_rule(rule='/callback/yahoo', view_func=yahoo_callback, methods=['GET'])
