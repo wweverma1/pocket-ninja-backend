@@ -63,17 +63,33 @@ class User:
 
     @staticmethod
     def assign_username(user_id: str, chosen_username: str):
-        """Sets the username ONLY if it is currently null/None."""
+        """
+        Sets the username and returns a status code:
+        0: Success
+        1: Username already taken by someone else
+        2: User already has a username set
+        3: Database/Connection error
+        """
         collection = User.get_collection()
         if collection is None or not ObjectId.is_valid(user_id):
-            return False
+            return 3
 
-        # Atomically update only if username is still None
+        # 1. Check if the username is already taken by ANYONE
+        existing_user = collection.find_one({"username": chosen_username})
+        if existing_user:
+            return 1
+
+        # 2. Attempt to update the specific user ONLY if their username is still None
         result = collection.update_one(
             {"_id": ObjectId(user_id), "username": None},
             {"$set": {"username": chosen_username}}
         )
-        return result.modified_count == 1
+
+        if result.matched_count == 0:
+            # The ID was right, but the "username": None filter failed
+            return 2
+
+        return 0 if result.modified_count == 1 else 3
 
     @staticmethod
     def get_user_by_social_id(social_id: str, provider: str):

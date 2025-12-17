@@ -1,15 +1,19 @@
-from typing import Any
+from typing import Any, Dict
 
 
 class Response:
-    def __init__(self, errorStatus: int = 0, message: str = "", result: Any = None):
+    def __init__(self, errorStatus: int = 1, message_en: str = "", message_jp: str = "", result: Any = None):
         self.errorStatus = errorStatus
-        self.message = message
+        self.message_en = message_en
+        self.message_jp = message_jp
         self.result = result
 
     def to_dict(self):
         return {
             "errorStatus": self.errorStatus,
-            "message": self.message,
+            "message": {
+                "en": self.message_en,
+                "jp": self.message_jp
+            },
             "result": self.result,
         }
