@@ -1,5 +1,6 @@
 from typing import Any
 
+
 class Response:
     def __init__(self, errorStatus: int = 0, message: str = "", result: Any = None):
         self.errorStatus = errorStatus

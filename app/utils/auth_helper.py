@@ -7,6 +7,7 @@ from flask import request, jsonify
 # Get secret key from environment variable
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
+
 def encode_auth_token(user_id: str) -> str:
     """
     Generates the Auth Token for the user.
@@ -15,9 +16,10 @@ def encode_auth_token(user_id: str) -> str:
     try:
         # JWT Payload (claims)
         payload = {
-            'exp': datetime.now(timezone.utc) + timedelta(days=7), # Token expiration time (e.g., 7 days)
-            'iat': datetime.now(timezone.utc), # Issued at time
-            'sub': user_id # Subject (User's ObjectId string)
+            # Token expiration time (e.g., 7 days)
+            'exp': datetime.now(timezone.utc) + timedelta(days=7),
+            'iat': datetime.now(timezone.utc),  # Issued at time
+            'sub': user_id  # Subject (User's ObjectId string)
         }
         # Encode the token using the secret key
         return jwt.encode(
@@ -28,6 +30,7 @@ def encode_auth_token(user_id: str) -> str:
     except Exception as e:
         print(f"Error encoding JWT: {e}")
         return e
+
 
 def decode_auth_token(auth_token: str) -> str | None:
     """
@@ -42,9 +45,9 @@ def decode_auth_token(auth_token: str) -> str | None:
         )
         # Check if the token is expired (though PyJWT handles this by default)
         if payload['exp'] < datetime.now(timezone.utc).timestamp():
-             return None # Token is expired
-             
-        return payload['sub'] # Returns the user ID string
+            return None  # Token is expired
+
+        return payload['sub']  # Returns the user ID string
     except jwt.ExpiredSignatureError:
         return 'Signature expired'
     except jwt.InvalidTokenError:
@@ -52,6 +55,7 @@ def decode_auth_token(auth_token: str) -> str | None:
     except Exception as e:
         print(f"Unexpected error decoding JWT: {e}")
         return 'Token error'
+
 
 def token_required(f):
     """
@@ -67,20 +71,20 @@ def token_required(f):
 
         # Extract the token (Bearer <token>)
         token = auth_header.split(' ')[1]
-        
+
         # Decode the token
         user_id_or_error = decode_auth_token(token)
 
         if isinstance(user_id_or_error, str) and user_id_or_error not in ('Signature expired', 'Invalid token', 'Token error'):
             # Token is valid, and user_id_or_error is the user_id string
-            
+
             # --- Optional: Database lookup to ensure user exists (best practice) ---
             from app.models.collections.user import User
             current_user = User.get_by_id(user_id_or_error)
-            
+
             if not current_user:
                 return jsonify({'message': 'Token is valid but user no longer exists'}), 401
-                
+
             # Pass the user ID or the user object to the decorated function
             return f(current_user, *args, **kwargs)
 

@@ -7,5 +7,7 @@ from app.product.controller import (
 
 product_endpoints = Blueprint('product', __name__, url_prefix="/product")
 
-product_endpoints.add_url_rule(rule='/details', view_func=add_or_update_product_details, methods=['PUT'])
-product_endpoints.add_url_rule(rule='/details', view_func=get_product_details, methods=['GET'])
+product_endpoints.add_url_rule(
+    rule='/details', view_func=add_or_update_product_details, methods=['PUT'])
+product_endpoints.add_url_rule(
+    rule='/details', view_func=get_product_details, methods=['GET'])

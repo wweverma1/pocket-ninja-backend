@@ -4,9 +4,11 @@ from datetime import datetime
 from flask import request
 from app import app
 
+
 @app.before_request
 def before_request():
     request.start_time = time.time()
+
 
 @app.after_request
 def after_request(response):
