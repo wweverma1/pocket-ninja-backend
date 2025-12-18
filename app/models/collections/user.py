@@ -5,11 +5,7 @@ from bson.objectid import ObjectId
 class User:
     """
     Model class to handle database operations for the 'users' collection.
-    
-    Collection Key Properties:
-    _id (ObjectId), username (unique), googleAccountId, lineAccountId, yahooAccountId, 
-    totalContributions, rankScore, hostRating (totalPoints, totalRatings), 
-    totalExpenditure, estimatedTotalSavings, joinedAt.
+    Includes base rating of 5.0, monthly stat tracking, and rank growth monitoring.
     """
     
     @staticmethod
@@ -21,135 +17,155 @@ class User:
 
     @staticmethod
     def create_user(username: str, line_account_id: str = None, google_account_id: str = None, yahoo_account_id: str = None):
-        """
-        Creates a new user document.
-        """
+        """Creates a new user document with initialized lifetime and monthly stats."""
         collection = User.get_collection()
-
-        # FIX APPLIED PREVIOUSLY: Use explicit 'is None' check
         if collection is None: 
             return None
         
+        now = datetime.now(timezone.utc)
+        current_month_key = now.strftime("%Y-%m")
+
         user_data = {
             "username": username,
-            "totalContributions": 0,
+            "joinedAt": now,
+            
+            # Rank System
             "rankScore": 0,
-            "hostRating": {"totalPoints": 0, "totalRatings": 0},
+            "lastRankIncrement": 0, # Tracks the points gained in the most recent action
+            
+            # Global Lifetime Stats
+            "totalContributions": 0,
             "totalExpenditure": 0.0,
             "estimatedTotalSavings": 0.0,
-            "joinedAt": datetime.now(timezone.utc)
+            
+            # Rating System (Start with 5.0 base)
+            "userRating": {
+                "totalScore": 5.0, 
+                "ratedByUsers": [] 
+            },
+            
+            # Monthly Stat Tracking
+            "statsMonth": current_month_key,
+            "monthlyContributions": 0,
+            "monthlyExpenditure": 0.0,
+            "monthlySavings": 0.0
         }
         
-        # FIX APPLIED: Conditionally add social IDs only if they are NOT None.
-        # This ensures the field is MISSING from the document if not provided.
-        if line_account_id is not None:
-            user_data["lineAccountId"] = line_account_id
-        if google_account_id is not None:
-            user_data["googleAccountId"] = google_account_id
-        if yahoo_account_id is not None:
-            user_data["yahooAccountId"] = yahoo_account_id
+        if line_account_id: user_data["lineAccountId"] = line_account_id
+        if google_account_id: user_data["googleAccountId"] = google_account_id
+        if yahoo_account_id: user_data["yahooAccountId"] = yahoo_account_id
         
         try:
-            # Enforce uniqueness on username
             collection.create_index([("username", 1)], unique=True)
-
-            # FIX APPLIED: Use the simple $exists: true filter.
-            # This is safe now because we omit the field if the value is None.
-            
-            # Enforce uniqueness on external social IDs (only if present)
-            if "lineAccountId" in user_data:
-                collection.create_index([("lineAccountId", 1)], unique=True, partialFilterExpression={"lineAccountId": {"$exists": True}})
-            if "googleAccountId" in user_data:
-                collection.create_index([("googleAccountId", 1)], unique=True, partialFilterExpression={"googleAccountId": {"$exists": True}})
-            if "yahooAccountId" in user_data:
-                collection.create_index([("yahooAccountId", 1)], unique=True, partialFilterExpression={"yahooAccountId": {"$exists": True}})
+            for field in ["lineAccountId", "googleAccountId", "yahooAccountId"]:
+                if field in user_data:
+                    collection.create_index([(field, 1)], unique=True, partialFilterExpression={field: {"$exists": True}})
                 
             result = collection.insert_one(user_data)
             return result.inserted_id
         except Exception as e:
-            # Handle potential duplicate key error (username or social ID conflict)
             print(f"Error creating user: {e}")
             return None
 
     @staticmethod
-    def get_id_and_username_by_social_account_id(social_id: str, provider: str):
+    def check_and_reset_monthly_stats(user_id: str):
+        """Resets monthly stats if the calendar month has changed."""
+        collection = User.get_collection()
+        if collection is None: return
+        
+        now_month = datetime.now(timezone.utc).strftime("%Y-%m")
+        
+        collection.update_one(
+            {"_id": ObjectId(user_id), "statsMonth": {"$ne": now_month}},
+            {
+                "$set": {
+                    "statsMonth": now_month,
+                    "monthlyContributions": 0,
+                    "monthlyExpenditure": 0.0,
+                    "monthlySavings": 0.0
+                }
+            }
+        )
+
+    @staticmethod
+    def update_user_stats(user_id: str, rank_increment: int = 0, contribution: int = 0, expenditure: float = 0.0, savings: float = 0.0):
         """
-        Retrieves a user's MongoDB ObjectId (_id) by their social media ID and provider.
+        Updates lifetime and monthly stats, and stores the latest rank gain.
         """
         collection = User.get_collection()
-        if collection is None:
-            return None
-            
-        field_map = {
-            'google': 'googleAccountId',
-            'line': 'lineAccountId',
-            'yahoo': 'yahooAccountId'
-        }
+        if collection is None: return False
         
-        field = field_map.get(provider)
-        if not field:
-            return None
+        User.check_and_reset_monthly_stats(user_id)
 
-        # Project only the _id field for efficiency
-        user = collection.find_one({field: social_id}, {"_id": 1})
+        result = collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$inc": {
+                    "rankScore": rank_increment,
+                    "totalContributions": contribution,
+                    "monthlyContributions": contribution,
+                    "totalExpenditure": expenditure,
+                    "monthlyExpenditure": expenditure,
+                    "estimatedTotalSavings": savings,
+                    "monthlySavings": savings
+                },
+                "$set": {
+                    "lastRankIncrement": rank_increment # Overwrites with newest gain
+                }
+            }
+        )
+        return result.modified_count == 1
+
+    @staticmethod
+    def add_user_rating(target_user_id: str, rater_user_id: str, score: float):
+        """Adds a rating score (1-5) if the rater hasn't rated this user before."""
+        collection = User.get_collection()
+        if collection is None: return False
+        if not (1 <= score <= 5): return False
+
+        result = collection.update_one(
+            {
+                "_id": ObjectId(target_user_id),
+                "userRating.ratedByUsers": {"$ne": ObjectId(rater_user_id)}
+            },
+            {
+                "$push": {"userRating.ratedByUsers": ObjectId(rater_user_id)},
+                "$inc": {"userRating.totalScore": score}
+            }
+        )
+        return result.modified_count == 1
+
+    @staticmethod
+    def get_id_and_username_by_social_account_id(social_id: str, provider: str):
+        collection = User.get_collection()
+        if collection is None: return (None, None)
+            
+        field_map = {'google': 'googleAccountId', 'line': 'lineAccountId', 'yahoo': 'yahooAccountId'}
+        field = field_map.get(provider)
+        if not field: return (None, None)
+
+        user = collection.find_one({field: social_id}, {"_id": 1, "username": 1})
         return (user['_id'], user['username']) if user else (None, None)
 
     @staticmethod
-    def get_by_id(user_id: str):
-        """
-        Retrieves a user document by its MongoDB ObjectId.
-        """
-        collection = User.get_collection()
-        if collection is None or not ObjectId.is_valid(user_id):
-            return None
-        
-        return collection.find_one({"_id": ObjectId(user_id)})
-
-    @staticmethod
     def update_username(user_id: str, chosen_username: str):
-        """
-        Sets the username and returns a status code:
-        0: Success
-        1: Username already taken by someone else
-        2: Database/Connection error
-        """
         collection = User.get_collection()
-        if collection is None or not ObjectId.is_valid(user_id):
-            return 2
+        if collection is None or not ObjectId.is_valid(user_id): return 2
 
-        # 1. Check if the username is already taken by ANYONE else
-        # We exclude the current user from this check so they can "re-save" their own name
         existing_user = collection.find_one({
             "username": chosen_username,
             "_id": {"$ne": ObjectId(user_id)}
         })
-        
-        if existing_user:
-            return 1
+        if existing_user: return 1
 
-        # 2. Update the user regardless of whether they already had a username
         result = collection.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"username": chosen_username}}
         )
+        return 0 if result.matched_count > 0 else 2
 
-        if result.matched_count == 0:
-            # User ID not found in database
-            return 2
-
-        return 0
-    
     @staticmethod
-    def update_estimated_savings(user_id: str, savings_amount: float):
-        """
-        Updates the user's estimatedTotalSavings using the MongoDB ObjectId.
-        """
+    def get_by_id(user_id: str):
         collection = User.get_collection()
-        if collection is None or not ObjectId.is_valid(user_id):
-            return False
-        
-        result = collection.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$inc": {"estimatedTotalSavings": savings_amount}} 
-        )
-        return result.modified_count == 1
+        if collection is None or not ObjectId.is_valid(user_id): return None
+        return collection.find_one({"_id": ObjectId(user_id)})
