@@ -5,7 +5,7 @@ from app.models.response import Response
 
 
 @token_required
-def onboard_user(current_user):
+def update_username(current_user):
     try:
         data = request.get_json()
         if not data:
