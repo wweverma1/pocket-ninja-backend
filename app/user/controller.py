@@ -26,15 +26,15 @@ def onboard_user(current_user):
             return jsonify(response.to_dict()), 400
 
         user_id = str(current_user['_id'])
-        status = User.assign_username(user_id, chosen_username)
+        status = User.update_username(user_id, chosen_username)
 
         if status == 0:
             # Success
             result = {"username": chosen_username}
             response = Response(
                 errorStatus=0,
-                message_en="Onboarding successful!",
-                message_jp="オンボーディングが完了しました！",
+                message_en="Username updated successfully!",
+                message_jp="ユーザー名が正常に更新されました。",
                 result=result
             )
             return jsonify(response.to_dict()), 200
@@ -47,16 +47,8 @@ def onboard_user(current_user):
             )
             return jsonify(response.to_dict()), 409
 
-        elif status == 2:
-            # Username already set
-            response = Response(
-                message_en="Username has already been set and cannot be changed.",
-                message_jp="ユーザー名は既に設定されており、変更できません。"
-            )
-            return jsonify(response.to_dict()), 403
-
         else:
-            # DB Error or Status 3
+            # DB Error or Status 2
             response = Response(
                 message_en="Internal database error. Please try again later.",
                 message_jp="データベースエラーが発生しました。後でもう一度お試しください。"

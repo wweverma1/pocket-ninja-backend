@@ -15,41 +15,34 @@ def final_redirect(token: str, is_new_user: bool, username: str = None, error_me
     if error_message:
         return redirect(f"{FRONTEND_URL}/auth/failure?error={urllib.parse.quote(error_message)}")
 
-    # We pass is_new_user as a string for easy URL parsing
-    url = f"{FRONTEND_URL}/auth/success?token={token}&is_new_user={str(is_new_user).lower()}"
-
-    if username:
-        url += f"&username={urllib.parse.quote(username)}"
-
-    return redirect(url)
+    return redirect(f"{FRONTEND_URL}/auth/success?token={token}&username={urllib.parse.quote(username)}&is_new_user={str(is_new_user).lower()}")
 
 
 def handle_social_login_logic(social_id: str, provider: str):
     """Centralized logic to determine if user is new or existing."""
-    user_doc = User.get_user_by_social_id(social_id, provider)
-
+    if not social_id:
+        return final_redirect(None, False, None, "Failed to get unique social ID")
+    
+    user_id_obj, username = User.get_id_and_username_by_social_account_id(social_id, provider)
+    
     is_new_user = False
-    username = None
 
-    if user_doc:
-        user_id_str = str(user_doc['_id'])
-        username = user_doc.get('username')
-        # If user exists but hasn't completed onboarding (username is None)
-        if not username:
-            is_new_user = True
-            # Suggested placeholder
-            username = f"ninja-{provider}-{social_id[:4]}"
+    if user_id_obj:
+        user_id_str = str(user_id_obj)
     else:
-        # Create user with no username
         is_new_user = True
-        username = f"ninja-{provider}-{social_id[:4]}"  # Suggested placeholder
+        username = f"ninja-{provider}-{social_id[:4]}"
 
-        kwargs = {f"{provider}_account_id": social_id}
-        new_id = User.create_user(**kwargs)
+        kwargs = {
+            "username": username,
+            f"{provider}_account_id": social_id
+        }
 
-        if not new_id:
+        new_user_id_obj = User.create_user(**kwargs)
+
+        if not new_user_id_obj:
             return final_redirect(None, False, None, "Registration failed on DB level")
-        user_id_str = str(new_id)
+        user_id_str = str(new_user_id_obj)
 
     token = encode_auth_token(user_id_str)
     return final_redirect(token, is_new_user, username)
