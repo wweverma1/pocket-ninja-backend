@@ -5,7 +5,7 @@ from bson.objectid import ObjectId
 class User:
     """
     Model class to handle database operations for the 'users' collection.
-    Includes base rating of 5.0, monthly stat tracking, and rank growth monitoring.
+    Includes base rating of 5, monthly stat tracking, and rank growth monitoring.
     """
     
     @staticmethod
@@ -40,7 +40,7 @@ class User:
             
             # Rating System (Start with 5.0 base)
             "userRating": {
-                "totalScore": 5.0, 
+                "totalScore": 5, 
                 "ratedByUsers": [] 
             },
             

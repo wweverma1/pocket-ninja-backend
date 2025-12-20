@@ -15,7 +15,7 @@ def get_profile(current_user):
         
         # Calculate Average Rating (Base 5.0 + contributions)
         rating_obj = current_user.get('userRating', {})
-        total_score = rating_obj.get('totalScore', 5.0)
+        total_score = rating_obj.get('totalScore', 5)
         raters_count = len(rating_obj.get('ratedByUsers', []))
         
         # Average = total / (raters + 1 for the base rating)
