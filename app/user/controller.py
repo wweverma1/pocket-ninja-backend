@@ -1,7 +1,9 @@
 from flask import request, jsonify
 from app.models.collections.user import User
+from app.models.collections.receipt import Receipt
 from app.utils.auth_helper import token_required
 from app.models.response import Response
+
 
 @token_required
 def get_profile(current_user):
@@ -12,12 +14,12 @@ def get_profile(current_user):
     try:
         # Ensure monthly stats are fresh before returning
         User.check_and_reset_monthly_stats(str(current_user['_id']))
-        
+
         # Calculate Average Rating (Base 5.0 + contributions)
         rating_obj = current_user.get('userRating', {})
         total_score = rating_obj.get('totalScore', 5)
         raters_count = len(rating_obj.get('ratedByUsers', []))
-        
+
         # Average = total / (raters + 1 for the base rating)
         avg_rating = round(total_score / (raters_count + 1), 2)
 
@@ -53,7 +55,8 @@ def get_profile(current_user):
             message_jp="プロフィールの取得に失敗しました。"
         )
         return jsonify(response.to_dict()), 500
-    
+
+
 @token_required
 def update_username(current_user):
     try:
@@ -112,3 +115,27 @@ def update_username(current_user):
             message_jp="オンボーディング中にサーバーエラーが発生しました。"
         )
         return jsonify(response.to_dict()), 500
+
+@token_required
+def get_submitted_receipts(current_user):
+    """
+    GET /user/receipt
+    Query Params: ?month=YYYY-MM (Optional, defaults to current month)
+    """
+    try:
+        user_id = str(current_user['_id'])
+        month = request.args.get('month')  # e.g., "2023-12"
+
+        receipts = Receipt.get_by_user(user_id, month=month)
+
+        response = Response(
+            errorStatus=0,
+            message_en="Receipts fetched successfully.",
+            message_jp="領収書の取得に成功しました。",
+            result=receipts
+        )
+        return jsonify(response.to_dict()), 200
+
+    except Exception as e:
+        print(f"Error fetching receipts: {e}")
+        return jsonify(Response(message_en="Internal Server Error").to_dict()), 500

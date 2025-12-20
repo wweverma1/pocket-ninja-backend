@@ -6,7 +6,7 @@ from app.models.response import Response
 from app.models.collections.user import User
 from app.utils.auth_helper import encode_auth_token
 
-BASE_URL = os.getenv("BASE_URL")
+CLOUD_BASE_URL = os.getenv("CLOUD_BASE_URL")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 
@@ -22,9 +22,9 @@ def handle_social_login_logic(social_id: str, provider: str):
     """Centralized logic to determine if user is new or existing."""
     if not social_id:
         return final_redirect(None, False, None, "Failed to get unique social ID")
-    
+
     user_id_obj, username = User.get_id_and_username_by_social_account_id(social_id, provider)
-    
+
     is_new_user = False
 
     if user_id_obj:
@@ -52,7 +52,7 @@ def handle_social_login_logic(social_id: str, provider: str):
 
 def google_redirect():
     client_id = os.getenv("GOOGLE_CLIENT_ID")
-    redirect_uri = f"{BASE_URL}/auth/callback/google"
+    redirect_uri = f"{CLOUD_BASE_URL}/auth/callback/google"
     AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     params = {
         'response_type': 'code',
@@ -66,7 +66,7 @@ def google_redirect():
 
 def line_redirect():
     client_id = os.getenv("LINE_CHANNEL_ID")
-    redirect_uri = f"{BASE_URL}/auth/callback/line"
+    redirect_uri = f"{CLOUD_BASE_URL}/auth/callback/line"
     AUTH_URL = "https://access.line.me/oauth2/v2.1/authorize"
     params = {
         'response_type': 'code',
@@ -80,7 +80,7 @@ def line_redirect():
 
 def yahoo_redirect():
     client_id = os.getenv("YAHOO_CLIENT_ID")
-    redirect_uri = f"{BASE_URL}/auth/callback/yahoo"
+    redirect_uri = f"{CLOUD_BASE_URL}/auth/callback/yahoo"
     AUTH_URL = "https://api.login.yahoo.com/oauth2/request_auth"
     params = {
         'response_type': 'code',
@@ -102,7 +102,7 @@ def google_callback():
         resp = requests.post("https://oauth2.googleapis.com/token", data={
             'code': code, 'client_id': os.getenv("GOOGLE_CLIENT_ID"),
             'client_secret': os.getenv("GOOGLE_CLIENT_SECRET"),
-            'redirect_uri': f"{BASE_URL}/auth/callback/google", 'grant_type': 'authorization_code'
+            'redirect_uri': f"{CLOUD_BASE_URL}/auth/callback/google", 'grant_type': 'authorization_code'
         })
         resp.raise_for_status()
         token_data = resp.json()
@@ -121,7 +121,7 @@ def line_callback():
         resp = requests.post("https://api.line.me/oauth2/v2.1/token", data={
             'code': code, 'client_id': os.getenv("LINE_CHANNEL_ID"),
             'client_secret': os.getenv("LINE_CHANNEL_SECRET"),
-            'redirect_uri': f"{BASE_URL}/auth/callback/line", 'grant_type': 'authorization_code'
+            'redirect_uri': f"{CLOUD_BASE_URL}/auth/callback/line", 'grant_type': 'authorization_code'
         }, headers={'Content-Type': 'application/x-www-form-urlencoded'})
         resp.raise_for_status()
         token_data = resp.json()
@@ -140,7 +140,7 @@ def yahoo_callback():
         resp = requests.post("https://api.login.yahoo.com/oauth2/get_token", data={
             'code': code, 'client_id': os.getenv("YAHOO_CLIENT_ID"),
             'client_secret': os.getenv("YAHOO_CLIENT_SECRET"),
-            'redirect_uri': f"{BASE_URL}/auth/callback/yahoo", 'grant_type': 'authorization_code'
+            'redirect_uri': f"{CLOUD_BASE_URL}/auth/callback/yahoo", 'grant_type': 'authorization_code'
         }, headers={'Content-Type': 'application/x-www-form-urlencoded'})
         resp.raise_for_status()
         token_data = resp.json()

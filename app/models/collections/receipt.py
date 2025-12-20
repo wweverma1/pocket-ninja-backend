@@ -1,0 +1,109 @@
+from app import db
+from datetime import datetime, timezone
+from bson.objectid import ObjectId
+
+
+class Receipt:
+    @staticmethod
+    def get_collection():
+        if db is None:
+            return None
+        return db['receipts']
+
+    @staticmethod
+    def create_receipt(user_id: str):
+        """
+        Creates a new receipt record with 'PENDING' status.
+        Returns the new receipt_id (ObjectId).
+        """
+        collection = Receipt.get_collection()
+        if collection is None:
+            return None
+
+        document = {
+            "userId": ObjectId(user_id),
+            "submittedAt": datetime.now(timezone.utc),
+            "status": "PENDING",  # Options: PENDING, COMPLETED, FAILED
+            "storeName": None,
+            "totalAmount": 0.0,
+            "result": None,       # Stores full JSON result or error message
+            "productsFound": 0
+        }
+
+        result = collection.insert_one(document)
+        return result.inserted_id
+
+    @staticmethod
+    def update_receipt_status(receipt_id, status: str, result_data: dict = None, store_name: str = None, total_amount: float = 0.0, products_count: int = 0):
+        """
+        Updates the receipt status and details after analysis.
+        """
+        collection = Receipt.get_collection()
+        if collection is None:
+            return
+
+        update_fields = {
+            "status": status,
+            "result": result_data
+        }
+
+        # Only update metadata if operation was successful
+        if status == "COMPLETED":
+            update_fields["storeName"] = store_name
+            update_fields["totalAmount"] = total_amount
+            update_fields["productsFound"] = products_count
+
+        collection.update_one(
+            {"_id": receipt_id},
+            {"$set": update_fields}
+        )
+
+    @staticmethod
+    def get_by_user(user_id: str, month: str = None):
+        """
+        Fetches recent receipts for a user, filtered by month.
+        
+        :param user_id: The ID of the user.
+        :param month: String in "YYYY-MM" format. Defaults to current UTC month if None.
+        """
+        collection = Receipt.get_collection()
+        if collection is None:
+            return []
+
+        # Default to current month if not provided
+        if month is None:
+            month = datetime.now(timezone.utc).strftime("%Y-%m")
+
+        try:
+            # Parse the month string "YYYY-MM"
+            dt_start_naive = datetime.strptime(month, "%Y-%m")
+            
+            # Make it timezone aware (UTC) to match database storage
+            dt_start = dt_start_naive.replace(tzinfo=timezone.utc)
+
+            # Calculate the start of the next month for the upper bound
+            if dt_start.month == 12:
+                dt_end = dt_start.replace(year=dt_start.year + 1, month=1)
+            else:
+                dt_end = dt_start.replace(month=dt_start.month + 1)
+
+            query = {
+                "userId": ObjectId(user_id),
+                "submittedAt": {
+                    "$gte": dt_start,
+                    "$lt": dt_end
+                }
+            }
+        except ValueError:
+            print(f"Invalid month format provided: {month}")
+            return []
+
+        cursor = collection.find(query).sort("submittedAt", -1)
+
+        # Convert ObjectId to str for JSON serialization
+        results = []
+        for doc in cursor:
+            doc['_id'] = str(doc['_id'])
+            doc['userId'] = str(doc['userId'])
+            results.append(doc)
+        return results

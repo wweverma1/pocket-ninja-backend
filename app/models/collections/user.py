@@ -1,13 +1,14 @@
-from app.database.db import db 
+from app import db
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
+
 
 class User:
     """
     Model class to handle database operations for the 'users' collection.
     Includes base rating of 5, monthly stat tracking, and rank growth monitoring.
     """
-    
+
     @staticmethod
     def get_collection():
         """Helper to get the MongoDB collection or None if DB is not ready."""
@@ -19,48 +20,52 @@ class User:
     def create_user(username: str, line_account_id: str = None, google_account_id: str = None, yahoo_account_id: str = None):
         """Creates a new user document with initialized lifetime and monthly stats."""
         collection = User.get_collection()
-        if collection is None: 
+        if collection is None:
             return None
-        
+
         now = datetime.now(timezone.utc)
         current_month_key = now.strftime("%Y-%m")
 
         user_data = {
             "username": username,
             "joinedAt": now,
-            
+
             # Rank System
             "rankScore": 0,
-            "lastRankIncrement": 0, # Tracks the points gained in the most recent action
-            
+            "lastRankIncrement": 0,  # Tracks the points gained in the most recent action
+
             # Global Lifetime Stats
             "totalContributions": 0,
             "totalExpenditure": 0.0,
             "estimatedTotalSavings": 0.0,
-            
+
             # Rating System (Start with 5.0 base)
             "userRating": {
-                "totalScore": 5, 
-                "ratedByUsers": [] 
+                "totalScore": 5,
+                "ratedByUsers": []
             },
-            
+
             # Monthly Stat Tracking
             "statsMonth": current_month_key,
             "monthlyContributions": 0,
             "monthlyExpenditure": 0.0,
             "monthlySavings": 0.0
         }
-        
-        if line_account_id: user_data["lineAccountId"] = line_account_id
-        if google_account_id: user_data["googleAccountId"] = google_account_id
-        if yahoo_account_id: user_data["yahooAccountId"] = yahoo_account_id
-        
+
+        if line_account_id:
+            user_data["lineAccountId"] = line_account_id
+        if google_account_id:
+            user_data["googleAccountId"] = google_account_id
+        if yahoo_account_id:
+            user_data["yahooAccountId"] = yahoo_account_id
+
         try:
             collection.create_index([("username", 1)], unique=True)
             for field in ["lineAccountId", "googleAccountId", "yahooAccountId"]:
                 if field in user_data:
-                    collection.create_index([(field, 1)], unique=True, partialFilterExpression={field: {"$exists": True}})
-                
+                    collection.create_index([(field, 1)], unique=True,
+                                            partialFilterExpression={field: {"$exists": True}})
+
             result = collection.insert_one(user_data)
             return result.inserted_id
         except Exception as e:
@@ -71,10 +76,11 @@ class User:
     def check_and_reset_monthly_stats(user_id: str):
         """Resets monthly stats if the calendar month has changed."""
         collection = User.get_collection()
-        if collection is None: return
-        
+        if collection is None:
+            return
+
         now_month = datetime.now(timezone.utc).strftime("%Y-%m")
-        
+
         collection.update_one(
             {"_id": ObjectId(user_id), "statsMonth": {"$ne": now_month}},
             {
@@ -93,8 +99,9 @@ class User:
         Updates lifetime and monthly stats, and stores the latest rank gain.
         """
         collection = User.get_collection()
-        if collection is None: return False
-        
+        if collection is None:
+            return False
+
         User.check_and_reset_monthly_stats(user_id)
 
         result = collection.update_one(
@@ -110,7 +117,7 @@ class User:
                     "monthlySavings": savings
                 },
                 "$set": {
-                    "lastRankIncrement": rank_increment # Overwrites with newest gain
+                    "lastRankIncrement": rank_increment  # Overwrites with newest gain
                 }
             }
         )
@@ -120,8 +127,10 @@ class User:
     def add_user_rating(target_user_id: str, rater_user_id: str, score: float):
         """Adds a rating score (1-5) if the rater hasn't rated this user before."""
         collection = User.get_collection()
-        if collection is None: return False
-        if not (1 <= score <= 5): return False
+        if collection is None:
+            return False
+        if not (1 <= score <= 5):
+            return False
 
         result = collection.update_one(
             {
@@ -138,11 +147,13 @@ class User:
     @staticmethod
     def get_id_and_username_by_social_account_id(social_id: str, provider: str):
         collection = User.get_collection()
-        if collection is None: return (None, None)
-            
+        if collection is None:
+            return (None, None)
+
         field_map = {'google': 'googleAccountId', 'line': 'lineAccountId', 'yahoo': 'yahooAccountId'}
         field = field_map.get(provider)
-        if not field: return (None, None)
+        if not field:
+            return (None, None)
 
         user = collection.find_one({field: social_id}, {"_id": 1, "username": 1})
         return (user['_id'], user['username']) if user else (None, None)
@@ -150,13 +161,15 @@ class User:
     @staticmethod
     def update_username(user_id: str, chosen_username: str):
         collection = User.get_collection()
-        if collection is None or not ObjectId.is_valid(user_id): return 2
+        if collection is None or not ObjectId.is_valid(user_id):
+            return 2
 
         existing_user = collection.find_one({
             "username": chosen_username,
             "_id": {"$ne": ObjectId(user_id)}
         })
-        if existing_user: return 1
+        if existing_user:
+            return 1
 
         result = collection.update_one(
             {"_id": ObjectId(user_id)},
@@ -167,5 +180,6 @@ class User:
     @staticmethod
     def get_by_id(user_id: str):
         collection = User.get_collection()
-        if collection is None or not ObjectId.is_valid(user_id): return None
+        if collection is None or not ObjectId.is_valid(user_id):
+            return None
         return collection.find_one({"_id": ObjectId(user_id)})

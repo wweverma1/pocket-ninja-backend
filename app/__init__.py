@@ -2,25 +2,47 @@ import os
 
 from flask import Flask
 from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
-
 from dotenv import load_dotenv
+
 load_dotenv()
 
-from app.database.db import init_db
-init_db()
+app = Flask(__name__)
+CORS(app, resources={r"/*": {
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
+
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+
+db = None
+
+MONGO_URI = os.getenv("MONGO_DB_URI")
+DB_NAME = os.getenv("DB_NAME")
+
+try:
+    if not MONGO_URI:
+        print("Warning: MONGO_DB_URI not found.")
+    else:
+        client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
+        client.admin.command('ping')
+        
+        # Assign the database object
+        db = client[DB_NAME]
+        print("MongoDB connection established successfully.")
+except Exception as e:
+    print(f"Error connecting to MongoDB: {e}")
 
 from app.home.routes import home_endpoints
 from app.auth.routes import auth_endpoints
 from app.user.routes import user_endpoints
-# from app.product.routes import product_endpoints
+from app.product.routes import product_endpoints
 
 app.register_blueprint(home_endpoints)
 app.register_blueprint(auth_endpoints)
 app.register_blueprint(user_endpoints)
-# app.register_blueprint(product_endpoints)
+app.register_blueprint(product_endpoints)
 
 from app.utils.app_functions import (
     before_request,
