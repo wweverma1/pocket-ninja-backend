@@ -54,7 +54,7 @@ class Receipt:
             update_fields["productsFound"] = products_count
 
         collection.update_one(
-            {"_id": receipt_id},
+            {"_id": receipt_id, "status": "PENDING"},
             {"$set": update_fields}
         )
 
