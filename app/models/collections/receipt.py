@@ -23,7 +23,7 @@ class Receipt:
         document = {
             "userId": ObjectId(user_id),
             "submittedAt": datetime.now(timezone.utc),
-            "status": "PENDING",  # Options: PENDING, COMPLETED, FAILED
+            "status": "PENDING",  # Options: PENDING, SUCCESS, FAILED
             "storeName": None,
             "totalAmount": 0.0,
             "result": None,       # Stores full JSON result or error message
@@ -48,7 +48,7 @@ class Receipt:
         }
 
         # Only update metadata if operation was successful
-        if status == "COMPLETED":
+        if status == "SUCCESS":
             update_fields["storeName"] = store_name
             update_fields["totalAmount"] = total_amount
             update_fields["productsFound"] = products_count
