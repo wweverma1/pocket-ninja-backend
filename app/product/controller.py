@@ -1,3 +1,4 @@
+import os
 import threading
 from datetime import datetime, timezone
 from flask import request, jsonify
@@ -12,6 +13,8 @@ from app.utils.gemini_helper import get_receipt_analysis_instruction, analyze_re
 from app.utils.image_helper import resize_image_for_analysis
 
 # --- Async Task for User Stats ---
+
+TARGET_CITY = os.getenv("TARGET_CITY")
 
 
 def perform_background_tasks(store_name, user_id=None, contribution_count=None, total_expenditure=None):
@@ -66,12 +69,11 @@ def add_or_update_product_details(current_user):
         # 1. Get Context Data
         available_stores = Store.get_all_store_names()
         now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        target_city = "Sapporo"
 
         # 2. Prepare Gemini Instruction
         instruction = get_receipt_analysis_instruction(
             date_str=now_str,
-            target_city=target_city,
+            target_city=TARGET_CITY,
             available_stores=available_stores
         )
 
