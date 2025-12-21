@@ -98,7 +98,9 @@ class Receipt:
             print(f"Invalid month format provided: {month}")
             return []
 
-        cursor = collection.find(query).sort("submittedAt", -1)
+        projection = {"_id": 0, "userId": 0}
+
+        cursor = collection.find(query, projection).sort("submittedAt", -1)
 
         # Convert ObjectId to str for JSON serialization
         results = []
