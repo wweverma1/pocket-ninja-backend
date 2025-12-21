@@ -25,7 +25,9 @@ def get_profile(current_user):
 
         profile_data = {
             "username": current_user.get('username'),
-            "joinedAt": current_user.get('joinedAt'),
+            "userAvatar": current_user.get('userAvatar', 1),
+            "preferredStoreProximity": current_user.get('preferredStoreProximity', 0.5),
+            "joinedAt": current_user.get('joinedAt').isoformat() if current_user.get('joinedAt') else None,
             "rankScore": current_user.get('rankScore', 0),
             "lastRankIncrement": current_user.get('lastRankIncrement', 0),
             "totalContributions": current_user.get('totalContributions', 0),
@@ -61,7 +63,7 @@ def get_profile(current_user):
 def update_username(current_user):
     try:
         data = request.get_json()
-        if not data:
+        if not data or 'username' not in data:
             response = Response(
                 message_en="No input data provided.",
                 message_jp="入力データがありません。"
@@ -116,6 +118,76 @@ def update_username(current_user):
         )
         return jsonify(response.to_dict()), 500
 
+@token_required
+def update_avatar(current_user):
+    try:
+        data = request.get_json()
+        if not data or 'userAvatar' not in data:
+            response = Response(
+                message_en="No input data provided.",
+                message_jp="入力データがありません。"
+            )
+            return jsonify(response.to_dict()), 400
+
+        avatar_id = data.get('userAvatar')
+        
+        if not isinstance(avatar_id, int) or not (1 <= avatar_id <= 8):
+             response = Response(
+                message_en="User avatar ID must be an integer between 1 and 8.",
+                message_jp="ユーザーアバター ID は 1 ～ 8 の整数である必要があります。"
+            )
+             return jsonify(response.to_dict()), 400
+
+        User.update_avatar(str(current_user['_id']), avatar_id)
+        
+        response = Response(
+            errorStatus=0,
+            message_en="User avatar updated successfully.",
+            message_jp="ユーザーアバターが正常に更新されました。",
+            result={"userAvatar": avatar_id}
+        )
+        return jsonify(response.to_dict()), 200
+    except Exception as e:
+        print(f"Error updating avatar: {e}")
+        return jsonify(Response(message_en="Internal Server Error").to_dict()), 500
+
+@token_required
+def update_proximity(current_user):
+    try:
+        data = request.get_json()
+        if not data or 'preferredStoreProximity' not in data:
+            response = Response(
+                message_en="No input data provided.",
+                message_jp="入力データがありません。"
+            )
+            return jsonify(response.to_dict()), 400
+
+        proximity = data.get('preferredStoreProximity')
+        
+        # Validation: must be number and reasonable (e.g., > 0 and <= 20km)
+        if not isinstance(proximity, (int, float)) or proximity <= 0:
+             response = Response(
+                message_en="Proximity must be a positive number.",
+                message_jp="距離は正の数値である必要があります。"
+            )
+             return jsonify(response.to_dict()), 400
+
+        if proximity > 5:
+            proximity = 5
+
+        User.update_proximity(str(current_user['_id']), float(proximity))
+        
+        response = Response(
+            errorStatus=0,
+            message_en="Proximity setting updated successfully.",
+            message_jp="距離設定が正常に更新されました。",
+            result={"preferredStoreProximity": float(proximity)}
+        )
+        return jsonify(response.to_dict()), 200
+    except Exception as e:
+        print(f"Error updating proximity: {e}")
+        return jsonify(Response(message_en="Internal Server Error").to_dict()), 500
+    
 @token_required
 def get_submitted_receipts(current_user):
     """

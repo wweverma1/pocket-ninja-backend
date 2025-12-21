@@ -2,6 +2,8 @@ from app import db
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
 
+import random
+
 
 class User:
     """
@@ -29,6 +31,9 @@ class User:
         user_data = {
             "username": username,
             "joinedAt": now,
+
+            "userAvatar": random.randint(1, 8),
+            "preferredStoreProximity": 0.5,
 
             # Rank System
             "rankScore": 0,
@@ -124,7 +129,7 @@ class User:
         return result.modified_count == 1
 
     @staticmethod
-    def add_user_rating(target_user_id: str, rater_user_id: str, score: float):
+    def add_user_rating(target_user_id: str, rater_user_id: str, score: int):
         """Adds a rating score (1-5) if the rater hasn't rated this user before."""
         collection = User.get_collection()
         if collection is None:
@@ -177,6 +182,30 @@ class User:
         )
         return 0 if result.matched_count > 0 else 2
 
+    @staticmethod
+    def update_avatar(user_id: str, avatar_id: int):
+        collection = User.get_collection()
+        if collection is None or not ObjectId.is_valid(user_id):
+            return False
+            
+        result = collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"userAvatar": avatar_id}}
+        )
+        return result.matched_count > 0
+
+    @staticmethod
+    def update_proximity(user_id: str, proximity: float):
+        collection = User.get_collection()
+        if collection is None or not ObjectId.is_valid(user_id):
+            return False
+            
+        result = collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"preferredStoreProximity": proximity}}
+        )
+        return result.matched_count > 0
+    
     @staticmethod
     def get_by_id(user_id: str):
         collection = User.get_collection()
