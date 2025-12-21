@@ -160,7 +160,8 @@ def add_or_update_product_details(current_user):
                 result_data=response.to_dict(),
                 store_name=store_name,
                 total_amount=total_amount,
-                products_count=len(products)
+                products_count=len(products),
+                products_updated=updated_count
             )
 
         return jsonify(response.to_dict()), 200

@@ -27,14 +27,15 @@ class Receipt:
             "storeName": None,
             "totalAmount": 0.0,
             "result": None,       # Stores full JSON result or error message
-            "productsFound": 0
+            "productsFound": 0,
+            "productsUpdated": 0
         }
 
         result = collection.insert_one(document)
         return result.inserted_id
 
     @staticmethod
-    def update_receipt_status(receipt_id, status: str, result_data: dict = None, store_name: str = None, total_amount: float = 0.0, products_count: int = 0):
+    def update_receipt_status(receipt_id, status: str, result_data: dict = None, store_name: str = None, total_amount: float = 0.0, products_count: int = 0, products_updated: int  = 0):
         """
         Updates the receipt status and details after analysis.
         """
@@ -52,6 +53,7 @@ class Receipt:
             update_fields["storeName"] = store_name
             update_fields["totalAmount"] = total_amount
             update_fields["productsFound"] = products_count
+            update_fields["productsUpdated"] = products_updated
 
         collection.update_one(
             {"_id": receipt_id, "status": "PENDING"},
