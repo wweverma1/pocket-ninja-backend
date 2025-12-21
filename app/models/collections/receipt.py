@@ -105,7 +105,7 @@ class Receipt:
         # Convert ObjectId to str for JSON serialization
         results = []
         for doc in cursor:
-            doc['_id'] = str(doc['_id'])
-            doc['userId'] = str(doc['userId'])
+            # doc['_id'] = str(doc['_id'])
+            # doc['userId'] = str(doc['userId'])
             results.append(doc)
         return results
