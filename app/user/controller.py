@@ -25,7 +25,7 @@ def get_profile(current_user):
 
         profile_data = {
             "username": current_user.get('username'),
-            "userAvatar": current_user.get('userAvatar', 1),
+            "userAvatarId": current_user.get('userAvatarId', 1),
             "preferredStoreProximity": current_user.get('preferredStoreProximity', 0.5),
             "joinedAt": current_user.get('joinedAt').isoformat() if current_user.get('joinedAt') else None,
             "rankScore": current_user.get('rankScore', 0),
@@ -119,17 +119,17 @@ def update_username(current_user):
         return jsonify(response.to_dict()), 500
 
 @token_required
-def update_avatar(current_user):
+def update_avatar_id(current_user):
     try:
         data = request.get_json()
-        if not data or 'userAvatar' not in data:
+        if not data or 'userAvatarId' not in data:
             response = Response(
                 message_en="No input data provided.",
                 message_jp="入力データがありません。"
             )
             return jsonify(response.to_dict()), 400
 
-        avatar_id = data.get('userAvatar')
+        avatar_id = data.get('userAvatarId')
         
         if not isinstance(avatar_id, int) or not (1 <= avatar_id <= 8):
              response = Response(
@@ -138,7 +138,7 @@ def update_avatar(current_user):
             )
              return jsonify(response.to_dict()), 400
 
-        User.update_avatar(str(current_user['_id']), avatar_id)
+        User.update_avatar_id(str(current_user['_id']), avatar_id)
         
         response = Response(
             errorStatus=0,

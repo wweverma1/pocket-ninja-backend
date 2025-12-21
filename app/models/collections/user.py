@@ -32,7 +32,7 @@ class User:
             "username": username,
             "joinedAt": now,
 
-            "userAvatar": random.randint(1, 8),
+            "userAvatarId": random.randint(1, 8),
             "preferredStoreProximity": 0.5,
 
             # Rank System
@@ -183,14 +183,14 @@ class User:
         return 0 if result.matched_count > 0 else 2
 
     @staticmethod
-    def update_avatar(user_id: str, avatar_id: int):
+    def update_avatar_id(user_id: str, avatar_id: int):
         collection = User.get_collection()
         if collection is None or not ObjectId.is_valid(user_id):
             return False
             
         result = collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"userAvatar": avatar_id}}
+            {"$set": {"userAvatarId": avatar_id}}
         )
         return result.matched_count > 0
 
