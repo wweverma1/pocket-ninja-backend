@@ -5,6 +5,7 @@ from flask import request, redirect, jsonify
 from app.models.response import Response
 from app.models.collections.user import User
 from app.utils.auth_helper import encode_auth_token
+from app.utils.username_generator import get_random_username
 
 CLOUD_BASE_URL = os.getenv("CLOUD_BASE_URL")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -31,7 +32,8 @@ def handle_social_login_logic(social_id: str, provider: str):
         user_id_str = str(user_id_obj)
     else:
         is_new_user = True
-        username = f"ninja-{provider}-{social_id[:4]}"
+        rand_base_username = get_random_username()
+        username = f"{rand_base_username}_{social_id[:4]}"
 
         kwargs = {
             "username": username,
