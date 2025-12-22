@@ -20,6 +20,12 @@ class Receipt:
         if collection is None:
             return None
 
+        # Add Index
+        try:
+            collection.create_index([("userId", 1)])
+        except Exception as e:
+            print(f"Error creating receipt index: {e}")
+
         document = {
             "userId": ObjectId(user_id),
             "submittedAt": datetime.now(timezone.utc),

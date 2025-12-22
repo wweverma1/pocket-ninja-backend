@@ -79,6 +79,14 @@ class Product:
         if collection is None:
             return 0
         
+        # --- Index Creation ---
+        try:
+            collection.create_index([("name", 1)])
+            collection.create_index([("aliases", 1)])
+            collection.create_index([("prices", 1)])
+        except Exception as e:
+            print(f"Error creating product indexes: {e}")
+        
         updated_count = 0
         now = datetime.now(timezone.utc)
         
