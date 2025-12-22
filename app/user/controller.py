@@ -44,8 +44,8 @@ def get_profile(current_user):
 
         response = Response(
             errorStatus=0,
-            message_en="Profile retrieved successfully.",
-            message_jp="プロフィールが正常に取得されました。",
+            message_en="User profile retrieved successfully.",
+            message_jp="ユーザー プロファイルが正常に取得されました。",
             result=profile_data
         )
         return jsonify(response.to_dict()), 200
@@ -53,8 +53,8 @@ def get_profile(current_user):
     except Exception as e:
         print(f"Profile Retrieval Error: {e}")
         response = Response(
-            message_en="Failed to retrieve profile.",
-            message_jp="プロフィールの取得に失敗しました。"
+            message_en="Failed to retrieve user profile.",
+            message_jp="ユーザー プロファイルの取得に失敗しました。"
         )
         return jsonify(response.to_dict()), 500
 
@@ -75,8 +75,8 @@ def update_username(current_user):
         # 1. Validation: Length check
         if len(chosen_username) < 3:
             response = Response(
-                message_en="Username must be at least 3 characters long.",
-                message_jp="ユーザー名は3文字以上である必要があります。"
+                message_en="username must be at least 3 characters long.",
+                message_jp="username は 3 文字以上である必要があります。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -113,8 +113,8 @@ def update_username(current_user):
     except Exception as e:
         print(f"Onboarding Error: {e}")
         response = Response(
-            message_en="Internal server error during onboarding.",
-            message_jp="オンボーディング中にサーバーエラーが発生しました。"
+            message_en="Internal server error.",
+            message_jp="内部サーバーエラー。"
         )
         return jsonify(response.to_dict()), 500
 
@@ -133,8 +133,8 @@ def update_avatar_id(current_user):
         
         if not isinstance(avatar_id, int) or not (1 <= avatar_id <= 8):
              response = Response(
-                message_en="User avatar ID must be an integer between 1 and 8.",
-                message_jp="ユーザーアバター ID は 1 ～ 8 の整数である必要があります。"
+                message_en="userAvatarId must be an integer between 1 and 8.",
+                message_jp="userAvatarId は 1 ～ 8 の整数である必要があります。"
             )
              return jsonify(response.to_dict()), 400
 
@@ -142,14 +142,14 @@ def update_avatar_id(current_user):
         
         response = Response(
             errorStatus=0,
-            message_en="User avatar updated successfully.",
+            message_en="User avatar updated successfully!",
             message_jp="ユーザーアバターが正常に更新されました。",
             result={"userAvatar": avatar_id}
         )
         return jsonify(response.to_dict()), 200
     except Exception as e:
-        print(f"Error updating avatar: {e}")
-        return jsonify(Response(message_en="Internal Server Error").to_dict()), 500
+        print(f"Error updating user avatar: {e}")
+        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
 
 @token_required
 def update_proximity(current_user):
@@ -167,8 +167,8 @@ def update_proximity(current_user):
         # Validation: must be number and reasonable (e.g., > 0 and <= 20km)
         if not isinstance(proximity, (int, float)) or proximity <= 0:
              response = Response(
-                message_en="Proximity must be a positive number.",
-                message_jp="距離は正の数値である必要があります。"
+                message_en="preferredStoreProximity must be a positive number.",
+                message_jp="preferredStoreProximity は正の数値である必要があります。"
             )
              return jsonify(response.to_dict()), 400
 
@@ -180,13 +180,13 @@ def update_proximity(current_user):
         response = Response(
             errorStatus=0,
             message_en="Proximity setting updated successfully.",
-            message_jp="距離設定が正常に更新されました。",
+            message_jp="優先店舗の近接設定が正常に更新されました。",
             result={"preferredStoreProximity": float(proximity)}
         )
         return jsonify(response.to_dict()), 200
     except Exception as e:
         print(f"Error updating proximity: {e}")
-        return jsonify(Response(message_en="Internal Server Error").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
     
 @token_required
 def get_submitted_receipts(current_user):
@@ -210,4 +210,4 @@ def get_submitted_receipts(current_user):
 
     except Exception as e:
         print(f"Error fetching receipts: {e}")
-        return jsonify(Response(message_en="Internal Server Error").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500

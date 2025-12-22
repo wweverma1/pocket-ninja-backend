@@ -92,7 +92,7 @@ def add_or_update_product_details(current_user):
 
         if error_code != 0:
             error_map = {
-                1: {"en": "Receipt not from a supported store.", "jp": "対象外の店舗のレシートです。"},
+                1: {"en": "Receipt is not from a supported store.", "jp": "レシートはサポートされているストアのものではありません。"},
                 2: {"en": "Receipt appears edited.", "jp": "レシートが編集されている可能性があります。"},
                 3: {"en": "Receipt date is too old or invalid.", "jp": "レシートの日付が古すぎるか、無効です。"},
                 4: {"en": "Could not read the date on the receipt.", "jp": "レシートの日付を読み取れませんでした。"},
@@ -172,8 +172,8 @@ def add_or_update_product_details(current_user):
         print(f"Product Update Error: {e}")
 
         response = Response(
-            message_en="Internal Server Error",
-            message_jp="サーバーエラーが発生しました。"
+            message_en="Internal server error.",
+            message_jp="内部サーバーエラー。"
         )
 
         if 'receipt_id' in locals() and receipt_id:
@@ -182,5 +182,5 @@ def add_or_update_product_details(current_user):
 
 
 def get_product_details():
-    response = Response(message_en="Not implemented yet", message_jp="まだ実装されていません")
+    response = Response(message_en="API Not implemented yet", message_jp="APIはまだ実装されていません")
     return jsonify(response.to_dict()), 501
