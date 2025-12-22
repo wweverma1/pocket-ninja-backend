@@ -65,7 +65,15 @@ class User:
             user_data["yahooAccountId"] = yahoo_account_id
 
         try:
+            # --- Indexes ---
             collection.create_index([("username", 1)], unique=True)
+            
+            # Index for Ranking (Descending)
+            collection.create_index([("rankScore", -1)])
+            
+            # Index for Rating Score
+            collection.create_index([("userRating.totalScore", -1)])
+
             for field in ["lineAccountId", "googleAccountId", "yahooAccountId"]:
                 if field in user_data:
                     collection.create_index([(field, 1)], unique=True,
@@ -212,3 +220,57 @@ class User:
         if collection is None or not ObjectId.is_valid(user_id):
             return None
         return collection.find_one({"_id": ObjectId(user_id)})
+
+    @staticmethod
+    def get_user_score_detail(user_id: str):
+        """
+        Calculates the user's rank and fetches their current score.
+        Rank 1 = Highest Score.
+        Returns: {'rank': int, 'score': int}
+        """
+        collection = User.get_collection()
+        if collection is None:
+            return None
+        
+        user = collection.find_one({"_id": ObjectId(user_id)}, {"rankScore": 1})
+        if not user:
+            return None
+        
+        my_score = user.get("rankScore", 0)
+        
+        # Count users with a strictly higher score
+        higher_rank_count = collection.count_documents({"rankScore": {"$gt": my_score}})
+        
+        return {
+            "rank": higher_rank_count + 1,
+            "score": my_score
+        }
+
+    @staticmethod
+    def get_top_users(limit=3):
+        """
+        Fetches the top N users based on rankScore.
+        Returns a list of dicts: {username, avatarId, score, contributions}
+        """
+        collection = User.get_collection()
+        if collection is None:
+            return []
+        
+        cursor = collection.find({}, {
+            "username": 1, 
+            "userAvatarId": 1, 
+            "rankScore": 1, 
+            "totalContributions": 1,
+            "_id": 0
+        }).sort("rankScore", -1).limit(limit)
+        
+        top_users = []
+        for doc in cursor:
+            top_users.append({
+                "username": doc.get("username"),
+                "avatarId": doc.get("userAvatarId"),
+                "score": doc.get("rankScore", 0),
+                "contributions": doc.get("totalContributions", 0)
+            })
+            
+        return top_users
