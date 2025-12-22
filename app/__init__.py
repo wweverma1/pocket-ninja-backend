@@ -38,11 +38,13 @@ from app.home.routes import home_endpoints
 from app.auth.routes import auth_endpoints
 from app.user.routes import user_endpoints
 from app.product.routes import product_endpoints
+from app.feedback.routes import feedback_endpoints
 
 app.register_blueprint(home_endpoints)
 app.register_blueprint(auth_endpoints)
 app.register_blueprint(user_endpoints)
 app.register_blueprint(product_endpoints)
+app.register_blueprint(feedback_endpoints)
 
 from app.utils.app_functions import (
     before_request,

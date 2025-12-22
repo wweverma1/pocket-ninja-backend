@@ -92,3 +92,37 @@ def token_required(f):
         return jsonify({'message': f'Token is invalid: {user_id_or_error}'}), 401
 
     return decorated
+
+def token_optional(f):
+    """
+    A decorator for routes that support optional authentication.
+    - If Token is valid: Passes `current_user` object.
+    - If Token is missing: Passes `current_user` as None.
+    - If Token is present but invalid: Returns 401 (Enforces validity if attempted).
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+
+        # Case 1: No token provided -> Anonymous User
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return f(None, *args, **kwargs)
+
+        # Case 2: Token provided -> Validate it
+        token = auth_header.split(' ')[1]
+        user_id_or_error = decode_auth_token(token)
+
+        if isinstance(user_id_or_error, str) and user_id_or_error not in ('Signature expired', 'Invalid token', 'Token error'):
+            from app.models.collections.user import User
+            current_user = User.get_by_id(user_id_or_error)
+            
+            if not current_user:
+                 # Token valid structurally but user gone from DB
+                 return jsonify({'message': 'Token is valid but user no longer exists'}), 401
+            
+            return f(current_user, *args, **kwargs)
+
+        # Case 3: Token was provided but is invalid -> 401
+        return jsonify({'message': f'Token is invalid: {user_id_or_error}'}), 401
+
+    return decorated
