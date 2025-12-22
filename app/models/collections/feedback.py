@@ -40,8 +40,8 @@ class Feedback:
             # --- Update Logic ---
             update_fields = {"lastUpdated": now}
             
-            # Update rating only if provided
-            if rating:
+            # Update rating only if provided (using explicit None check)
+            if rating is not None:
                 update_fields["rating"] = rating
             
             # Append message if provided

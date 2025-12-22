@@ -22,8 +22,6 @@ def get_avg_rating(current_user):
             user_feedback = Feedback.get_by_user_id(user_id)
             if user_feedback:
                 result_data["userRating"] = user_feedback.get('rating', None)
-                # Optional: Include their message if you want to show it back to them
-                # result_data["userFeedbackMessage"] = user_feedback.get('message', "")
             else:
                 result_data["userRating"] = None
 
@@ -49,13 +47,24 @@ def submit_feedback(current_user):
         data = request.get_json() or {}
         
         rating = data.get('rating')
-        message = data.get('feedback')
+        raw_message = data.get('feedback')
+        
+        # Prepare clean message (handle None or whitespace-only)
+        clean_message = raw_message.strip() if raw_message else None
 
-        # Validation: Rating (if provided)
+        # --- Validation 1: At least one field required ---
+        if rating is None and not clean_message:
+            response = Response(
+                message_en="Please provide either a rating or feedback message.",
+                message_jp="評価またはフィードバックメッセージのいずれかを提供してください。"
+            )
+            return jsonify(response.to_dict()), 400
+
+        # --- Validation 2: Rating Validity (if provided) ---
         if rating is not None:
             if not isinstance(rating, int) or not (1 <= rating <= 5):
                 response = Response(
-                    message_en="rating must be an integer between 1 and 5.",
+                    message_en="Rating must be an integer between 1 and 5.",
                     message_jp="rating は 1 から 5 までの整数である必要があります。"
                 )
                 return jsonify(response.to_dict()), 400
@@ -63,7 +72,7 @@ def submit_feedback(current_user):
         user_id = str(current_user['_id'])
         
         # Call upsert logic
-        result = Feedback.upsert_feedback(user_id, rating, message)
+        result = Feedback.upsert_feedback(user_id, rating, clean_message)
 
         if result:
             response = Response(
