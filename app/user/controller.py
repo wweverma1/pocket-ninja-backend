@@ -179,8 +179,8 @@ def update_proximity(current_user):
         
         response = Response(
             errorStatus=0,
-            message_en="Proximity setting updated successfully.",
-            message_jp="優先店舗の近接設定が正常に更新されました。",
+            message_en="Preferred store proximity updated successfully!",
+            message_jp="優先店舗の近接性が正常に更新されました。",
             result={"preferredStoreProximity": float(proximity)}
         )
         return jsonify(response.to_dict()), 200
