@@ -46,8 +46,8 @@ def submit_feedback(current_user):
     try:
         data = request.get_json() or {}
         
-        rating = data.get('rating')
-        raw_message = data.get('feedback')
+        rating = data.get('userRating')
+        raw_message = data.get('userFeedback')
         
         # Prepare clean message (handle None or whitespace-only)
         clean_message = raw_message.strip() if raw_message else None
