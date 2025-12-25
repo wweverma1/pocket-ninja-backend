@@ -13,7 +13,7 @@ class Response:
             "errorStatus": self.errorStatus,
             "message": {
                 "en": self.message_en,
-                "jp": self.message_jp
+                "ja": self.message_jp
             },
             "result": self.result,
         }
