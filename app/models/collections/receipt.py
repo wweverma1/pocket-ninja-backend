@@ -106,7 +106,7 @@ class Receipt:
             print(f"Invalid month format provided: {month}")
             return []
 
-        projection = {"_id": 0, "userId": 0, "result": 0}
+        projection = {"_id": 0, "userId": 0, "result.result": 0}
 
         cursor = collection.find(query, projection).sort("submittedAt", -1)
 
