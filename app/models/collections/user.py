@@ -67,10 +67,10 @@ class User:
         try:
             # --- Indexes ---
             collection.create_index([("username", 1)], unique=True)
-            
+
             # Index for Ranking (Descending)
             collection.create_index([("rankScore", -1)])
-            
+
             # Index for Rating Score
             collection.create_index([("userRating.totalScore", -1)])
 
@@ -195,7 +195,7 @@ class User:
         collection = User.get_collection()
         if collection is None or not ObjectId.is_valid(user_id):
             return False
-            
+
         result = collection.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"userAvatarId": avatar_id}}
@@ -207,13 +207,13 @@ class User:
         collection = User.get_collection()
         if collection is None or not ObjectId.is_valid(user_id):
             return False
-            
+
         result = collection.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"preferredStoreProximity": proximity}}
         )
         return result.matched_count > 0
-    
+
     @staticmethod
     def get_by_id(user_id: str):
         collection = User.get_collection()
@@ -231,16 +231,16 @@ class User:
         collection = User.get_collection()
         if collection is None:
             return None
-        
+
         user = collection.find_one({"_id": ObjectId(user_id)}, {"rankScore": 1})
         if not user:
             return None
-        
+
         my_score = user.get("rankScore", 0)
-        
+
         # Count users with a strictly higher score
         higher_rank_count = collection.count_documents({"rankScore": {"$gt": my_score}})
-        
+
         return {
             "rank": higher_rank_count + 1,
             "score": my_score
@@ -255,15 +255,15 @@ class User:
         collection = User.get_collection()
         if collection is None:
             return []
-        
+
         cursor = collection.find({}, {
-            "username": 1, 
-            "userAvatarId": 1, 
-            "rankScore": 1, 
+            "username": 1,
+            "userAvatarId": 1,
+            "rankScore": 1,
             "totalContributions": 1,
             "_id": 0
         }).sort("rankScore", -1).limit(limit)
-        
+
         top_users = []
         for doc in cursor:
             top_users.append({
@@ -272,5 +272,5 @@ class User:
                 "score": doc.get("rankScore", 0),
                 "contributions": doc.get("totalContributions", 0)
             })
-            
+
         return top_users

@@ -33,6 +33,7 @@ JAPANESE_FOOD_USERNAMES = [
     "hokkaido_hungry", "sapporo_soup"
 ]
 
+
 def get_random_username():
     """
     Returns a random username from the JAPANESE_FOOD_USERNAMES list.

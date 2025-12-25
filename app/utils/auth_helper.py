@@ -93,6 +93,7 @@ def token_required(f):
 
     return decorated
 
+
 def token_optional(f):
     """
     A decorator for routes that support optional authentication.
@@ -115,11 +116,11 @@ def token_optional(f):
         if isinstance(user_id_or_error, str) and user_id_or_error not in ('Signature expired', 'Invalid token', 'Token error'):
             from app.models.collections.user import User
             current_user = User.get_by_id(user_id_or_error)
-            
+
             if not current_user:
-                 # Token valid structurally but user gone from DB
-                 return jsonify({'message': 'Token is valid but user no longer exists'}), 401
-            
+                # Token valid structurally but user gone from DB
+                return jsonify({'message': 'Token is valid but user no longer exists'}), 401
+
             return f(current_user, *args, **kwargs)
 
         # Case 3: Token was provided but is invalid -> 401

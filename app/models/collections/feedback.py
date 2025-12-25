@@ -30,20 +30,20 @@ class Feedback:
 
         now = datetime.now(timezone.utc)
         uid = ObjectId(user_id)
-        
+
         # Prepare the message string (if valid)
         clean_message = message.strip() if message else None
-        
+
         existing_doc = collection.find_one({"userId": uid})
 
         if existing_doc:
             # --- Update Logic ---
             update_fields = {"lastUpdated": now}
-            
+
             # Update rating only if provided (using explicit None check)
             if rating is not None:
                 update_fields["rating"] = rating
-            
+
             # Append message if provided
             if clean_message:
                 old_msg = existing_doc.get("message", "")
@@ -53,7 +53,7 @@ class Feedback:
                     new_full_msg = f"{old_msg}\n\n[{timestamp_str}] {clean_message}"
                 else:
                     new_full_msg = f"[{timestamp_str}] {clean_message}"
-                
+
                 update_fields["message"] = new_full_msg
 
             collection.update_one({"_id": existing_doc["_id"]}, {"$set": update_fields})
@@ -64,7 +64,7 @@ class Feedback:
             initial_message = ""
             if clean_message:
                 initial_message = f"[{now.strftime('%Y-%m-%d')}] {clean_message}"
-            
+
             document = {
                 "userId": uid,
                 "rating": rating,
@@ -86,7 +86,7 @@ class Feedback:
             {"$match": {"rating": {"$ne": None}}},
             {"$group": {"_id": None, "avgRating": {"$avg": "$rating"}}}
         ]
-        
+
         result = list(collection.aggregate(pipeline))
 
         if result:

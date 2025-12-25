@@ -41,7 +41,7 @@ class Receipt:
         return result.inserted_id
 
     @staticmethod
-    def update_receipt_status(receipt_id, status: str, result_data: dict = None, store_name: str = None, total_amount: float = 0.0, products_count: int = 0, products_updated: int  = 0):
+    def update_receipt_status(receipt_id, status: str, result_data: dict = None, store_name: str = None, total_amount: float = 0.0, products_count: int = 0, products_updated: int = 0):
         """
         Updates the receipt status and details after analysis.
         """
@@ -70,7 +70,7 @@ class Receipt:
     def get_by_user(user_id: str, month: str = None):
         """
         Fetches recent receipts for a user, filtered by month.
-        
+
         :param user_id: The ID of the user.
         :param month: String in "YYYY-MM" format. Defaults to current UTC month if None.
         """
@@ -85,7 +85,7 @@ class Receipt:
         try:
             # Parse the month string "YYYY-MM"
             dt_start_naive = datetime.strptime(month, "%Y-%m")
-            
+
             # Make it timezone aware (UTC) to match database storage
             dt_start = dt_start_naive.replace(tzinfo=timezone.utc)
 
@@ -106,7 +106,7 @@ class Receipt:
             print(f"Invalid month format provided: {month}")
             return []
 
-        projection = {"_id": 0, "userId": 0}
+        projection = {"_id": 0, "userId": 0, "result": 0}
 
         cursor = collection.find(query, projection).sort("submittedAt", -1)
 

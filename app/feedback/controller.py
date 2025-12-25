@@ -45,10 +45,10 @@ def submit_feedback(current_user):
     """
     try:
         data = request.get_json() or {}
-        
+
         rating = data.get('userRating')
         raw_message = data.get('userFeedback')
-        
+
         # Prepare clean message (handle None or whitespace-only)
         clean_message = raw_message.strip() if raw_message else None
 
@@ -70,7 +70,7 @@ def submit_feedback(current_user):
                 return jsonify(response.to_dict()), 400
 
         user_id = str(current_user['_id'])
-        
+
         # Call upsert logic
         result = Feedback.upsert_feedback(user_id, rating, clean_message)
 

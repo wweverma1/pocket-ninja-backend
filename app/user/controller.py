@@ -118,6 +118,7 @@ def update_username(current_user):
         )
         return jsonify(response.to_dict()), 500
 
+
 @token_required
 def update_avatar_id(current_user):
     try:
@@ -130,16 +131,16 @@ def update_avatar_id(current_user):
             return jsonify(response.to_dict()), 400
 
         avatar_id = data.get('userAvatarId')
-        
+
         if not isinstance(avatar_id, int) or not (1 <= avatar_id <= 8):
-             response = Response(
+            response = Response(
                 message_en="userAvatarId must be an integer between 1 and 8.",
                 message_jp="userAvatarId は 1 ～ 8 の整数である必要があります。"
             )
-             return jsonify(response.to_dict()), 400
+            return jsonify(response.to_dict()), 400
 
         User.update_avatar_id(str(current_user['_id']), avatar_id)
-        
+
         response = Response(
             errorStatus=0,
             message_en="User avatar updated successfully!",
@@ -150,6 +151,7 @@ def update_avatar_id(current_user):
     except Exception as e:
         print(f"Error updating user avatar: {e}")
         return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
+
 
 @token_required
 def update_proximity(current_user):
@@ -163,20 +165,20 @@ def update_proximity(current_user):
             return jsonify(response.to_dict()), 400
 
         proximity = data.get('preferredStoreProximity')
-        
+
         # Validation: must be number and reasonable (e.g., > 0 and <= 20km)
         if not isinstance(proximity, (int, float)) or proximity <= 0:
-             response = Response(
+            response = Response(
                 message_en="preferredStoreProximity must be a positive number.",
                 message_jp="preferredStoreProximity は正の数値である必要があります。"
             )
-             return jsonify(response.to_dict()), 400
+            return jsonify(response.to_dict()), 400
 
         if proximity > 5:
             proximity = 5
 
         User.update_proximity(str(current_user['_id']), float(proximity))
-        
+
         response = Response(
             errorStatus=0,
             message_en="Preferred store proximity updated successfully!",
@@ -187,7 +189,8 @@ def update_proximity(current_user):
     except Exception as e:
         print(f"Error updating proximity: {e}")
         return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
-    
+
+
 @token_required
 def get_submitted_receipts(current_user):
     """
