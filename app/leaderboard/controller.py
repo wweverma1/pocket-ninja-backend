@@ -97,11 +97,11 @@ def get_leaderboard(current_user):
         response = Response(
             errorStatus=0,
             message_en="Leaderboard fetched successfully.",
-            message_jp="リーダーボードが正常に取得されました。",
+            message_ja="リーダーボードが正常に取得されました。",
             result=result_data
         )
         return jsonify(response.to_dict()), 200
 
     except Exception as e:
         print(f"Error fetching leaderboard: {e}")
-        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_ja="内部サーバーエラー。").to_dict()), 500

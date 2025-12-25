@@ -58,7 +58,7 @@ def add_or_update_product_details(current_user):
     try:
         data = request.get_json()
         if not data or 'receiptImageData' not in data:
-            response = Response(message_en="No receipt image provided.", message_jp="領収書の画像が提供されていません。")
+            response = Response(message_en="No receipt image provided.", message_ja="領収書の画像が提供されていません。")
             if receipt_id:
                 Receipt.update_receipt_status(receipt_id, "FAILED", response.to_dict())
             return jsonify(response.to_dict()), 400
@@ -82,7 +82,7 @@ def add_or_update_product_details(current_user):
 
         if not analysis_result:
             response = Response(message_en="AI Analysis failed. Please try again.",
-                                message_jp="AI分析に失敗しました。もう一度お試しください。")
+                                message_ja="AI分析に失敗しました。もう一度お試しください。")
             if receipt_id:
                 Receipt.update_receipt_status(receipt_id, "FAILED", response.to_dict())
             return jsonify(response.to_dict()), 502
@@ -105,7 +105,7 @@ def add_or_update_product_details(current_user):
 
             response = Response(
                 message_en=err_obj["en"],
-                message_jp=err_obj["jp"],
+                message_ja=err_obj["jp"],
                 result=analysis_result
             )
 
@@ -121,7 +121,7 @@ def add_or_update_product_details(current_user):
         if not products:
             response = Response(
                 message_en="No products found in receipt.",
-                message_jp="レシートに商品が見つかりませんでした。",
+                message_ja="レシートに商品が見つかりませんでした。",
                 result=analysis_result
             )
 
@@ -151,7 +151,7 @@ def add_or_update_product_details(current_user):
         response = Response(
             errorStatus=0,
             message_en="Receipt processed successfully!",
-            message_jp="レシートの処理が完了しました！",
+            message_ja="レシートの処理が完了しました！",
             result=result_data
         )
 
@@ -173,7 +173,7 @@ def add_or_update_product_details(current_user):
 
         response = Response(
             message_en="Internal server error.",
-            message_jp="内部サーバーエラー。"
+            message_ja="内部サーバーエラー。"
         )
 
         if 'receipt_id' in locals() and receipt_id:
@@ -182,5 +182,5 @@ def add_or_update_product_details(current_user):
 
 
 def get_product_details():
-    response = Response(message_en="API Not implemented yet", message_jp="APIはまだ実装されていません")
+    response = Response(message_en="API Not implemented yet", message_ja="APIはまだ実装されていません")
     return jsonify(response.to_dict()), 501

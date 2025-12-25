@@ -45,7 +45,7 @@ def get_profile(current_user):
         response = Response(
             errorStatus=0,
             message_en="User profile retrieved successfully.",
-            message_jp="ユーザー プロファイルが正常に取得されました。",
+            message_ja="ユーザー プロファイルが正常に取得されました。",
             result=profile_data
         )
         return jsonify(response.to_dict()), 200
@@ -54,7 +54,7 @@ def get_profile(current_user):
         print(f"Profile Retrieval Error: {e}")
         response = Response(
             message_en="Failed to retrieve user profile.",
-            message_jp="ユーザー プロファイルの取得に失敗しました。"
+            message_ja="ユーザー プロファイルの取得に失敗しました。"
         )
         return jsonify(response.to_dict()), 500
 
@@ -66,7 +66,7 @@ def update_username(current_user):
         if not data or 'username' not in data:
             response = Response(
                 message_en="No input data provided.",
-                message_jp="入力データがありません。"
+                message_ja="入力データがありません。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -76,7 +76,7 @@ def update_username(current_user):
         if len(chosen_username) < 3:
             response = Response(
                 message_en="username must be at least 3 characters long.",
-                message_jp="username は 3 文字以上である必要があります。"
+                message_ja="username は 3 文字以上である必要があります。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -89,7 +89,7 @@ def update_username(current_user):
             response = Response(
                 errorStatus=0,
                 message_en="Username updated successfully!",
-                message_jp="ユーザー名が正常に更新されました。",
+                message_ja="ユーザー名が正常に更新されました。",
                 result=result
             )
             return jsonify(response.to_dict()), 200
@@ -98,7 +98,7 @@ def update_username(current_user):
             # Username taken
             response = Response(
                 message_en="This username is already taken. Please try another.",
-                message_jp="このユーザー名は既に使用されています。別の名前を試してください。"
+                message_ja="このユーザー名は既に使用されています。別の名前を試してください。"
             )
             return jsonify(response.to_dict()), 409
 
@@ -106,7 +106,7 @@ def update_username(current_user):
             # DB Error or Status 2
             response = Response(
                 message_en="Internal database error. Please try again later.",
-                message_jp="データベースエラーが発生しました。後でもう一度お試しください。"
+                message_ja="データベースエラーが発生しました。後でもう一度お試しください。"
             )
             return jsonify(response.to_dict()), 500
 
@@ -114,7 +114,7 @@ def update_username(current_user):
         print(f"Onboarding Error: {e}")
         response = Response(
             message_en="Internal server error.",
-            message_jp="内部サーバーエラー。"
+            message_ja="内部サーバーエラー。"
         )
         return jsonify(response.to_dict()), 500
 
@@ -126,7 +126,7 @@ def update_avatar_id(current_user):
         if not data or 'userAvatarId' not in data:
             response = Response(
                 message_en="No input data provided.",
-                message_jp="入力データがありません。"
+                message_ja="入力データがありません。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -135,7 +135,7 @@ def update_avatar_id(current_user):
         if not isinstance(avatar_id, int) or not (1 <= avatar_id <= 8):
             response = Response(
                 message_en="userAvatarId must be an integer between 1 and 8.",
-                message_jp="userAvatarId は 1 ～ 8 の整数である必要があります。"
+                message_ja="userAvatarId は 1 ～ 8 の整数である必要があります。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -144,13 +144,13 @@ def update_avatar_id(current_user):
         response = Response(
             errorStatus=0,
             message_en="User avatar updated successfully!",
-            message_jp="ユーザーアバターが正常に更新されました。",
+            message_ja="ユーザーアバターが正常に更新されました。",
             result={"userAvatar": avatar_id}
         )
         return jsonify(response.to_dict()), 200
     except Exception as e:
         print(f"Error updating user avatar: {e}")
-        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_ja="内部サーバーエラー。").to_dict()), 500
 
 
 @token_required
@@ -160,7 +160,7 @@ def update_proximity(current_user):
         if not data or 'preferredStoreProximity' not in data:
             response = Response(
                 message_en="No input data provided.",
-                message_jp="入力データがありません。"
+                message_ja="入力データがありません。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -170,7 +170,7 @@ def update_proximity(current_user):
         if not isinstance(proximity, (int, float)) or proximity <= 0:
             response = Response(
                 message_en="preferredStoreProximity must be a positive number.",
-                message_jp="preferredStoreProximity は正の数値である必要があります。"
+                message_ja="preferredStoreProximity は正の数値である必要があります。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -182,13 +182,13 @@ def update_proximity(current_user):
         response = Response(
             errorStatus=0,
             message_en="Preferred store proximity updated successfully!",
-            message_jp="優先店舗の近接性が正常に更新されました。",
+            message_ja="優先店舗の近接性が正常に更新されました。",
             result={"preferredStoreProximity": float(proximity)}
         )
         return jsonify(response.to_dict()), 200
     except Exception as e:
         print(f"Error updating proximity: {e}")
-        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_ja="内部サーバーエラー。").to_dict()), 500
 
 
 @token_required
@@ -206,11 +206,11 @@ def get_submitted_receipts(current_user):
         response = Response(
             errorStatus=0,
             message_en="Receipts fetched successfully.",
-            message_jp="領収書の取得に成功しました。",
+            message_ja="領収書の取得に成功しました。",
             result=receipts
         )
         return jsonify(response.to_dict()), 200
 
     except Exception as e:
         print(f"Error fetching receipts: {e}")
-        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_ja="内部サーバーエラー。").to_dict()), 500

@@ -2,10 +2,10 @@ from typing import Any, Dict
 
 
 class Response:
-    def __init__(self, errorStatus: int = 1, message_en: str = "", message_jp: str = "", result: Any = None):
+    def __init__(self, errorStatus: int = 1, message_en: str = "", message_ja: str = "", result: Any = None):
         self.errorStatus = errorStatus
         self.message_en = message_en
-        self.message_jp = message_jp
+        self.message_ja = message_ja
         self.result = result
 
     def to_dict(self):
@@ -13,7 +13,7 @@ class Response:
             "errorStatus": self.errorStatus,
             "message": {
                 "en": self.message_en,
-                "ja": self.message_jp
+                "ja": self.message_ja
             },
             "result": self.result,
         }

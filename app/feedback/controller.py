@@ -28,13 +28,13 @@ def get_avg_rating(current_user):
         response = Response(
             errorStatus=0,
             message_en="Average rating fetched successfully.",
-            message_jp="平均評価が正常に取得されました。",
+            message_ja="平均評価が正常に取得されました。",
             result=result_data
         )
         return jsonify(response.to_dict()), 200
     except Exception as e:
         print(f"Error fetching avg rating: {e}")
-        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_ja="内部サーバーエラー。").to_dict()), 500
 
 
 @token_required
@@ -56,7 +56,7 @@ def submit_feedback(current_user):
         if rating is None and not clean_message:
             response = Response(
                 message_en="Please provide either a rating or feedback message.",
-                message_jp="評価またはフィードバックメッセージのいずれかを提供してください。"
+                message_ja="評価またはフィードバックメッセージのいずれかを提供してください。"
             )
             return jsonify(response.to_dict()), 400
 
@@ -65,7 +65,7 @@ def submit_feedback(current_user):
             if not isinstance(rating, int) or not (1 <= rating <= 5):
                 response = Response(
                     message_en="Rating must be an integer between 1 and 5.",
-                    message_jp="rating は 1 から 5 までの整数である必要があります。"
+                    message_ja="rating は 1 から 5 までの整数である必要があります。"
                 )
                 return jsonify(response.to_dict()), 400
 
@@ -78,12 +78,12 @@ def submit_feedback(current_user):
             response = Response(
                 errorStatus=0,
                 message_en="Feedback submitted successfully!",
-                message_jp="フィードバックが正常に送信されました！"
+                message_ja="フィードバックが正常に送信されました！"
             )
             return jsonify(response.to_dict()), 200
         else:
-            return jsonify(Response(message_en="Failed to save feedback.", message_jp="フィードバックの保存に失敗しました。").to_dict()), 500
+            return jsonify(Response(message_en="Failed to save feedback.", message_ja="フィードバックの保存に失敗しました。").to_dict()), 500
 
     except Exception as e:
         print(f"Feedback Error: {e}")
-        return jsonify(Response(message_en="Internal server error.", message_jp="内部サーバーエラー。").to_dict()), 500
+        return jsonify(Response(message_en="Internal server error.", message_ja="内部サーバーエラー。").to_dict()), 500
