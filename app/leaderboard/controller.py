@@ -33,17 +33,17 @@ def get_leaderboard(current_user):
                 }
 
                 milestone_en = ""
-                milestone_jp = ""
+                milestone_ja = ""
 
                 # Ensure we have users in the leaderboard to compare against
                 if not top_users:
                     # Edge case: No users in DB yet
                     milestone_en = "Be the first to contribute!"
-                    milestone_jp = "最初の貢献者になりましょう！"
+                    milestone_ja = "最初の貢献者になりましょう！"
 
                 elif my_rank == 1:
                     milestone_en = "Thank you for being our top contributor!"
-                    milestone_jp = "トップコントリビューターとしてのご協力ありがとうございます！"
+                    milestone_ja = "トップコントリビューターとしてのご協力ありがとうございます！"
 
                 elif my_rank == 2:
                     # Compare with Rank 1
@@ -53,7 +53,7 @@ def get_leaderboard(current_user):
                     diff = max(diff, 0)
 
                     milestone_en = f"You need {diff} points to reach 1st place!"
-                    milestone_jp = f"1位になるにはあと {diff} ポイント必要です！"
+                    milestone_ja = f"1位になるにはあと {diff} ポイント必要です！"
 
                 elif my_rank == 3:
                     # Compare with Rank 2
@@ -64,11 +64,11 @@ def get_leaderboard(current_user):
                         diff = max(diff, 0)
 
                         milestone_en = f"You need {diff} points to reach 2nd place!"
-                        milestone_jp = f"2位になるにはあと {diff} ポイント必要です！"
+                        milestone_ja = f"2位になるにはあと {diff} ポイント必要です！"
                     else:
                         # Fallback if only 1 user exists despite me being rank 3 (unlikely but safe)
                         milestone_en = "Keep contributing to rise up!"
-                        milestone_jp = "貢献してランクを上げましょう！"
+                        milestone_ja = "貢献してランクを上げましょう！"
 
                 else:
                     # Rank > 3 (4th, 5th, etc.)
@@ -79,7 +79,7 @@ def get_leaderboard(current_user):
                         diff = max(diff, 0)
 
                         milestone_en = f"You need {diff} points to be one of our top contributors."
-                        milestone_jp = f"トップコントリビューターになるには、あと {diff} ポイント必要です。"
+                        milestone_ja = f"トップコントリビューターになるには、あと {diff} ポイント必要です。"
                     else:
                         # If fewer than 3 users exist, effectively aiming for last spot on board
                         target_score = top_users[-1]['score']
@@ -87,11 +87,11 @@ def get_leaderboard(current_user):
                         diff = max(diff, 0)
 
                         milestone_en = f"You need {diff} points to join the leaderboard."
-                        milestone_jp = f"リーダーボードに参加するには、あと {diff} ポイント必要です。"
+                        milestone_ja = f"リーダーボードに参加するには、あと {diff} ポイント必要です。"
 
                 result_data["userStats"]["nextMilestone"] = {
                     "en": milestone_en,
-                    "jp": milestone_jp
+                    "ja": milestone_ja
                 }
 
         response = Response(
