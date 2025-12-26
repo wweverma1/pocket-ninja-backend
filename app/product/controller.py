@@ -121,7 +121,7 @@ def add_or_update_product_details(current_user):
             # Penalize user for bad receipt
             thread = threading.Thread(
                 target=penalize_user_for_bad_upload,
-                args=(user_id)
+                args=(user_id,)
             )
             thread.start()
 
