@@ -1,6 +1,7 @@
 from app import db
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from bson.objectid import ObjectId
+from pymongo import ReturnDocument
 
 import random
 
@@ -54,7 +55,11 @@ class User:
             "statsMonth": current_month_key,
             "monthlyContributions": 0,
             "monthlyExpenditure": 0.0,
-            "monthlySavings": 0.0
+            "monthlySavings": 0.0,
+
+            # Tracking bad uploads
+            "consecutiveBadUploads": 0,
+            "bannedUntil": None
         }
 
         if line_account_id:
@@ -130,7 +135,9 @@ class User:
                     "monthlySavings": savings
                 },
                 "$set": {
-                    "lastRankIncrement": rank_increment  # Overwrites with newest gain
+                    "lastRankIncrement": rank_increment,  # Overwrites with newest gain
+                    "consecutiveBadUploads": 0,
+                    "bannedUntil": None
                 }
             }
         )
@@ -274,3 +281,79 @@ class User:
             })
 
         return top_users
+
+    @staticmethod
+    def penalize_user(user_id: str):
+        """
+        Increments bad upload count. If >= 5, bans the user for 24 hours.
+        """
+        collection = User.get_collection()
+        if collection is None:
+            return False
+
+        # 1. Atomic Increment & Fetch
+        # This increments the counter and returns the UPDATED document in one go.
+        updated_user = collection.find_one_and_update(
+            {"_id": ObjectId(user_id)},
+            {"$inc": {"consecutiveBadUploads": 1}},
+            projection={"consecutiveBadUploads": 1},  # Only fetch what we need
+            return_document=ReturnDocument.AFTER
+        )
+
+        if not updated_user:
+            return False
+
+        # 2. Check Threshold & Apply Ban if needed
+        if updated_user.get("consecutiveBadUploads", 0) >= 5:
+            ban_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
+
+            collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"bannedUntil": ban_expiry}}
+            )
+            return True  # User was just banned
+
+        return False  # User penalized but not yet banned
+
+    @staticmethod
+    def is_upload_allowed(user_id: str):
+        """
+        Checks if user is banned. 
+        If ban has expired, automatically resets stats and allows access.
+        """
+        collection = User.get_collection()
+        if collection is None:
+            return True
+
+        # Optimization: Only fetch the 'bannedUntil' field
+        user = collection.find_one(
+            {"_id": ObjectId(user_id)},
+            {"bannedUntil": 1}
+        )
+
+        if not user:
+            return True  # User not found, arguably allowed or handle error
+
+        banned_until = user.get("bannedUntil")
+
+        # Case 1: Not Banned
+        if banned_until is None:
+            return True
+
+        now = datetime.now(timezone.utc)
+
+        # Ensure timezone awareness for comparison
+        if banned_until.tzinfo is None:
+            banned_until = banned_until.replace(tzinfo=timezone.utc)
+
+        # Case 2: Still Banned
+        if now <= banned_until:
+            return False
+
+        # Case 3: Ban Expired (Lazy Reset)
+        # We reset the ban and counters immediately so next check is fast
+        collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"bannedUntil": None, "consecutiveBadUploads": 0}}
+        )
+        return True

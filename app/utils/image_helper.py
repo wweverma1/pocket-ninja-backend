@@ -4,36 +4,49 @@ import base64
 from PIL import Image
 
 
-def resize_image_for_analysis(base64_str, max_width=1024, quality=80):
+def optimize_image_stream(file_storage, max_dimension=1500, quality=80) -> bytes:
     """
-    Decodes a base64 image, resizes it if it exceeds max_width,
-    and returns the optimized base64 string.
+    Smart Optimization:
+    1. If file is already small (<1MB) and WebP -> Return bytes immediately.
+    2. Otherwise -> Resize and compress (Fallback for API clients/errors).
     """
     try:
-        # 1. Strip header if present
-        if "," in base64_str:
-            base64_str = base64_str.split(",")[1]
+        # 1. Get file size without reading into memory yet
+        file_storage.seek(0, os.SEEK_END)
+        file_size = file_storage.tell()
+        file_storage.seek(0)  # Reset cursor to start
 
-        # 2. Decode to bytes
-        image_data = base64.b64decode(base64_str)
-        img = Image.open(io.BytesIO(image_data))
+        # SMART CHECK: If frontend did its job, don't re-compress (Avoids generation loss)
+        # Check if size is < 1MB and MIME type is webp
+        if file_size < 1 * 1024 * 1024 and file_storage.mimetype == 'image/webp':
+            return file_storage.read()
 
-        # 3. Convert to RGB (in case of PNG with transparency)
-        if img.mode in ('RGBA', 'P'):
+        # --- Fallback (Heavy Processing) ---
+        # Only runs if user bypasses frontend or sends a massive raw PNG
+        img = Image.open(file_storage)
+
+        # Handle Transparency
+        if img.mode in ('RGBA', 'LA'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[-1])
+            img = background
+        elif img.mode != 'RGB':
             img = img.convert('RGB')
 
-        # 4. Resize if width > max_width
+        # Resize (Longest Edge)
         width, height = img.size
-        if width > max_width:
-            ratio = max_width / width
-            new_height = int(height * ratio)
-            img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+        max_side = max(width, height)
+        if max_side > max_dimension:
+            scale_factor = max_dimension / max_side
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-        # 5. Compress to JPEG
+        # Compress
         buffer = io.BytesIO()
-        img.save(buffer, format="JPEG", quality=quality, optimize=True)
-        return base64.b64encode(buffer.getvalue()).decode('utf-8')
+        img.save(buffer, format="WEBP", quality=quality, method=4)
+        return buffer.getvalue()
 
     except Exception as e:
-        print(f"Image Resizing Error: {e}")
-        return base64_str  # Return original if resizing fails
+        print(f"Optimization Error: {e}")
+        return None

@@ -67,7 +67,7 @@ def get_receipt_analysis_instruction(date_str, target_city, available_stores):
     return receipt_analysis_instruction
 
 
-def analyze_receipt_with_gemini(image_base64, instruction):
+def analyze_receipt_with_gemini(image_bytes: bytes, instruction: str):
     """
     Sends the image and instruction to Gemini via the Google Gen AI SDK.
     Enforces structured output using Pydantic.
@@ -81,12 +81,6 @@ def analyze_receipt_with_gemini(image_base64, instruction):
         # Initialize Client
         client = genai.Client(api_key=api_key)
 
-        # Handle Base64 Image
-        if "," in image_base64:
-            image_base64 = image_base64.split(",")[1]
-
-        image_bytes = base64.b64decode(image_base64)
-
         # Call Gemini 2.5 Flash
         # 2.5 Flash is currently the fastest model for this task.
         response = client.models.generate_content(
@@ -94,7 +88,7 @@ def analyze_receipt_with_gemini(image_base64, instruction):
             contents=[
                 types.Part.from_bytes(
                     data=image_bytes,
-                    mime_type='image/jpeg',
+                    mime_type='image/webp',
                 ),
                 instruction
             ],

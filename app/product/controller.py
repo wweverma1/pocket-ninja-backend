@@ -10,14 +10,22 @@ from app.models.collections.product import Product
 from app.models.collections.receipt import Receipt
 from app.utils.auth_helper import token_required
 from app.utils.gemini_helper import get_receipt_analysis_instruction, analyze_receipt_with_gemini
-from app.utils.image_helper import resize_image_for_analysis
+from app.utils.image_helper import optimize_image_stream
 
 # --- Async Task for User Stats ---
 
 TARGET_CITY = os.getenv("TARGET_CITY")
 
 
-def perform_background_tasks(store_name, user_id=None, contribution_count=None, total_expenditure=None):
+def penalize_user_for_bad_upload(user_id):
+    try:
+        User.penalize_user(user_id=user_id)
+        print(f"Async penalty update for user {user_id} complete.")
+    except Exception as e:
+        print(f"Async penalty update failed for user {user_id}: {e}")
+
+
+def reward_user_and_update_store(store_name, user_id, contribution_count=None, total_expenditure=None):
     if store_name:
         Store.add_store_if_not_exists(store_name)
 
@@ -32,39 +40,58 @@ def perform_background_tasks(store_name, user_id=None, contribution_count=None, 
             expenditure=total_expenditure,
             savings=0.0  # Savings are calculated in the Comparison flow, not Contribution flow
         )
-        print(f"Async update for user {user_id} complete.")
+        print(f"Async reward update for user {user_id} complete.")
     except Exception as e:
-        print(f"Async update failed for user {user_id}: {e}")
+        print(f"Async reward update failed for user {user_id}: {e}")
 
 
 @token_required
 def add_or_update_product_details(current_user):
     """
     PUT /product/details
-    Flow:
-    1. Receive receipt image (Base64).
-    2. Fetch available stores.
-    3. Construct Gemini Prompt.
-    4. Send to Gemini.
-    5. Validate response (Error Code).
-    6. Update Products DB (Conditional Date Check).
-    7. Async Update User Stats.
-    8. Return result.
+    Updated to handle multipart/form-data for faster uploads.
     """
     user_id = str(current_user['_id'])
 
-    receipt_id = Receipt.create_receipt(user_id)
-
     try:
-        data = request.get_json()
-        if not data or 'receiptImageData' not in data:
-            response = Response(message_en="No receipt image provided.", message_ja="領収書の画像が提供されていません。")
+        if not User.is_upload_allowed(user_id):
+            response = Response(
+                message_en="Uploads forbidden due to repeated bad uploads. Please try again in 24 hours.",
+                message_ja="不正なアップロードが続いたため、24時間制限されています。"
+            )
+            return jsonify(response.to_dict()), 403
+
+        receipt_id = Receipt.create_receipt(user_id)
+
+        # 1. Check if the file is present in the request
+        if 'receiptImage' not in request.files:
+            response = Response(
+                message_en="No receipt image provided.",
+                message_ja="領収書の画像が提供されていません。"
+            )
             if receipt_id:
                 Receipt.update_receipt_status(receipt_id, "FAILED", response.to_dict())
             return jsonify(response.to_dict()), 400
 
-        raw_image_b64 = data['receiptImageData']
-        optimized_image_b64 = resize_image_for_analysis(raw_image_b64)
+        file_storage = request.files['receiptImage']
+
+        # 2. Validation: Ensure filename exists and is not empty
+        if file_storage.filename == '':
+            # Handle empty selection
+            return jsonify({"message": "No file selected"}), 400
+
+        # 3. Optimization: Pass the file stream directly (No Base64 decoding needed yet)
+        # We pass the stream to our helper function
+        optimized_image_bytes = optimize_image_stream(file_storage.stream)
+
+        if not optimized_image_bytes:
+            response = Response(
+                message_en="Image processing failed.",
+                message_ja="画像処理に失敗しました。"
+            )
+            if receipt_id:
+                Receipt.update_receipt_status(receipt_id, "FAILED", response.to_dict())
+            return jsonify(response.to_dict()), 400
 
         # 1. Get Context Data
         available_stores = Store.get_all_store_names()
@@ -78,7 +105,7 @@ def add_or_update_product_details(current_user):
         )
 
         # 3. Call Gemini
-        analysis_result = analyze_receipt_with_gemini(optimized_image_b64, instruction)
+        analysis_result = analyze_receipt_with_gemini(optimized_image_bytes, instruction)
 
         if not analysis_result:
             response = Response(message_en="AI Analysis failed. Please try again.",
@@ -91,6 +118,13 @@ def add_or_update_product_details(current_user):
         error_code = analysis_result.get("error_code")
 
         if error_code != 0:
+            # Penalize user for bad receipt
+            thread = threading.Thread(
+                target=penalize_user_for_bad_upload,
+                args=(user_id)
+            )
+            thread.start()
+
             error_map = {
                 1: {"en": "Receipt is not from a supported store.", "ja": "レシートはサポートされているストアのものではありません。"},
                 2: {"en": "Receipt appears edited.", "ja": "レシートが編集されている可能性があります。"},
@@ -134,7 +168,7 @@ def add_or_update_product_details(current_user):
 
         # 7. Async Update User Stats
         thread = threading.Thread(
-            target=perform_background_tasks,
+            target=reward_user_and_update_store,
             args=(store_name, user_id, updated_count, float(total_amount))
         )
         thread.start()
@@ -176,8 +210,6 @@ def add_or_update_product_details(current_user):
             message_ja="内部サーバーエラー。"
         )
 
-        if 'receipt_id' in locals() and receipt_id:
-            Receipt.update_receipt_status(receipt_id, "FAILED", response.to_dict())
         return jsonify(response.to_dict()), 500
 
 

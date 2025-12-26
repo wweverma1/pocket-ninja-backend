@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+
+# Allow upto 2 MB uploads
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
+
 CORS(app, resources={r"/*": {
     "origins": "*",
     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
