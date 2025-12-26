@@ -80,9 +80,9 @@ def add_or_update_product_details(current_user):
             # Handle empty selection
             return jsonify({"message": "No file selected"}), 400
 
-        # 3. Optimization: Pass the file stream directly (No Base64 decoding needed yet)
-        # We pass the stream to our helper function
-        optimized_image_bytes = optimize_image_stream(file_storage.stream)
+        # 3. Optimization: Pass the file directly (No Base64 decoding needed yet)
+        # We pass the file to our helper function
+        optimized_image_bytes = optimize_image_stream(file_storage)
 
         if not optimized_image_bytes:
             response = Response(
